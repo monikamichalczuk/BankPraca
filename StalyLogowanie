@@ -1,0 +1,148 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Data.SqlClient;
+using System.Security.Cryptography;
+
+namespace BankPraca
+{
+    
+    public partial class StalyLogowanie : Form
+    {
+        string haslo1;
+        public static string pesel;
+        public static string haslo;
+
+        public StalyLogowanie()
+        {
+            InitializeComponent();
+        }
+
+        static string GetMd5Hash(MD5 md5Hash, string input)
+        {
+
+            // Convert the input string to a byte array and compute the hash.
+            byte[] data = md5Hash.ComputeHash(Encoding.UTF8.GetBytes(input));
+
+            // Create a new Stringbuilder to collect the bytes
+            // and create a string.
+            StringBuilder sBuilder = new StringBuilder();
+
+            // Loop through each byte of the hashed data 
+            // and format each one as a hexadecimal string.
+            for (int i = 0; i < data.Length; i++)
+            {
+                sBuilder.Append(data[i].ToString("x2"));
+            }
+
+            // Return the hexadecimal string.
+            return sBuilder.ToString();
+        }
+
+        private void textBoxPesel_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Tab || e.KeyCode == Keys.D0 || e.KeyCode == Keys.D1 || e.KeyCode == Keys.D2 || e.KeyCode == Keys.D3 || e.KeyCode == Keys.D4 || e.KeyCode == Keys.D5 || e.KeyCode == Keys.D6 || e.KeyCode == Keys.D7 || e.KeyCode == Keys.D8 || e.KeyCode == Keys.D9 || e.KeyCode == Keys.NumPad0 || e.KeyCode == Keys.NumPad1 || e.KeyCode == Keys.NumPad2 || e.KeyCode == Keys.NumPad3 || e.KeyCode == Keys.NumPad4 || e.KeyCode == Keys.NumPad5 || e.KeyCode == Keys.NumPad6 || e.KeyCode == Keys.NumPad7 || e.KeyCode == Keys.NumPad8 || e.KeyCode == Keys.NumPad9 || e.KeyCode == Keys.Back)
+            {
+                e.Handled = true;
+            }
+            else
+            {
+                textBoxPesel.Clear();
+                MessageBox.Show("Źle wprowadzone. Podaj ciąg cyfr.", "Błąd PESEL", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        private void Zamknij_Click(object sender, EventArgs e)
+        {
+            this.Hide();
+            Startowa start = new Startowa();
+            start.Show();
+        }
+
+        private void Dalej_Click(object sender, EventArgs e)
+        {
+            if(textBoxPesel.Text.Length == 11) 
+            {
+                if (textBoxHaslo.Text.Length < 5 || textBoxHaslo.Text.Length > 50)
+                {
+                    MessageBox.Show("Hasło musi składać się od 5-ciu do 50-ciu znaków.", "Błąd hasła", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+                else
+                {
+                    SqlConnection con = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\Monika\Desktop\BankPraca\BazaBank.mdf;Integrated Security=True;Connect Timeout=30");
+                    con.Open();
+
+                    SqlDataAdapter sda = new SqlDataAdapter("SELECT Count(*) From Logowanie WHERE PESEL = '" + this.textBoxPesel.Text + "'", con);
+                    DataTable dt = new DataTable();
+                    sda.Fill(dt);
+                    if (dt.Rows[0][0].ToString() == "1")
+                    {
+                        SqlCommand query = new SqlCommand("SELECT Hasło FROM Logowanie WHERE PESEL = '" + this.textBoxPesel.Text + "'", con);
+                        SqlDataReader queryResult = query.ExecuteReader();
+                        DataTable dd = new DataTable();
+                        dd.Load(queryResult);
+                        DataRow de = dd.Rows[0];
+                        haslo1 = de[0].ToString();
+
+                        MD5 kod = MD5.Create();
+
+                        string hash = GetMd5Hash(kod, textBoxHaslo.Text);
+
+                        if (string.Compare(haslo1, hash) == 0)
+                        {
+                            SqlDataAdapter sdc = new SqlDataAdapter("SELECT Count(*) From Logowanie WHERE PESEL = '" + this.textBoxPesel.Text + "' AND Konto = 'TAK'", con);
+                            DataTable dc = new DataTable();
+                            sdc.Fill(dc);
+                            if (dc.Rows[0][0].ToString() == "1")
+                            {
+                                this.Hide();
+                                Stalyklient ss = new Stalyklient();
+
+                                pesel = textBoxPesel.Text;
+                                haslo = textBoxHaslo.Text;
+
+                                ss.Show();
+                            }
+                            else 
+                            {
+                                MessageBox.Show("Konto na podany numer PESEL nie istnieje.","Błąd logowanie",MessageBoxButtons.OK,MessageBoxIcon.Warning);
+                            }
+                        }
+                        else
+                        {
+                            MessageBox.Show("Podane hasło jest błędne. Podaj prawidłowe hasło.", "Błąd hasło", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        }
+                    }
+                    else
+                    {
+                        MessageBox.Show("Podany numer PESEL nie istnieje w bazie danych. Podaj prawidłowy numer PESEL.", "Błąd numer PESEL", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
+                    con.Close();
+                }
+            }
+            else 
+            {
+                MessageBox.Show("Źle został podany numer PESEL. Musi zawierać 11 cyfr.", "Błąd numer PESEL", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        private void textBoxHaslo_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Tab || e.KeyCode == Keys.CapsLock || e.KeyCode == Keys.LShiftKey || e.KeyCode == Keys.RShiftKey || e.KeyCode == Keys.Shift || e.KeyCode == Keys.ShiftKey || e.KeyCode == Keys.D0 || e.KeyCode == Keys.D1 || e.KeyCode == Keys.D2 || e.KeyCode == Keys.D3 || e.KeyCode == Keys.D4 || e.KeyCode == Keys.D5 || e.KeyCode == Keys.D6 || e.KeyCode == Keys.D7 || e.KeyCode == Keys.D8 || e.KeyCode == Keys.D9 || e.KeyCode == Keys.NumPad0 || e.KeyCode == Keys.NumPad1 || e.KeyCode == Keys.NumPad2 || e.KeyCode == Keys.NumPad3 || e.KeyCode == Keys.NumPad4 || e.KeyCode == Keys.NumPad5 || e.KeyCode == Keys.NumPad6 || e.KeyCode == Keys.NumPad7 || e.KeyCode == Keys.NumPad8 || e.KeyCode == Keys.NumPad9 || e.KeyCode == Keys.Back || e.KeyCode == Keys.Q || e.KeyCode == Keys.W || e.KeyCode == Keys.E || e.KeyCode == Keys.R || e.KeyCode == Keys.T || e.KeyCode == Keys.Y || e.KeyCode == Keys.U || e.KeyCode == Keys.I || e.KeyCode == Keys.O || e.KeyCode == Keys.P || e.KeyCode == Keys.A || e.KeyCode == Keys.S || e.KeyCode == Keys.D || e.KeyCode == Keys.F || e.KeyCode == Keys.G || e.KeyCode == Keys.H || e.KeyCode == Keys.J || e.KeyCode == Keys.K || e.KeyCode == Keys.L || e.KeyCode == Keys.Z || e.KeyCode == Keys.X || e.KeyCode == Keys.C || e.KeyCode == Keys.V || e.KeyCode == Keys.B || e.KeyCode == Keys.N || e.KeyCode == Keys.M)
+            {
+                e.Handled = true;
+            }
+            else
+            {
+                textBoxHaslo.Clear();
+                MessageBox.Show("Źle wprowadzone. Hasło składa się tylko z liter i cyfr.", "Błąd hasło", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+    }
+}
