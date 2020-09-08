@@ -1,0 +1,109 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Data.SqlClient;
+
+namespace BankPraca
+{
+    public partial class Informacje : Form
+    {
+        public static string PESEL;
+
+        public Informacje()
+        {
+            InitializeComponent();
+        }
+
+        private void buttonWyloguj_Click(object sender, EventArgs e)
+        {
+            this.Hide();
+            this.SendToBack();
+            this.Visible = false;
+        }
+
+        private void Pobierzdane(string sql)
+        {
+
+            SqlConnection polaczenie = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\Monika\Desktop\BankPraca\BazaBank.mdf;Integrated Security=True;Connect Timeout=30");
+            polaczenie.Open();
+            using (SqlCommand sel = new SqlCommand(sql, polaczenie))
+            {
+                DataTable dt = new DataTable();
+                SqlDataAdapter da = new SqlDataAdapter(sel);
+                da.Fill(dt);
+                dataGridView1.DataSource = dt.DefaultView;
+            }
+
+        }
+
+        private void buttonSzukaj_Click(object sender, EventArgs e)
+        {
+            DateTime dataod = dateTimePickerDataOd.Value;
+            DateTime datado = dateTimePickerDataDo.Value;
+
+            if (dataod > datado)
+            {
+                MessageBox.Show("Data od i do zostały źle podane. Data od musi być mniejsza niż data do.", "Błąd data", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+            else
+            {
+                SqlConnection con = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\Monika\Desktop\BankPraca\BazaBank.mdf;Integrated Security=True;Connect Timeout=30");
+                con.Open();
+
+                if (Rodzaj.Text == "Kredyt dla mlodych (2,0%)")
+                {
+                    string sql = "SELECT NumerTransakcji, DataTransakcji, RodzajTransakcji, Kwota FROM KredytDlaMlodych" + PESEL + " WHERE DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <='" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'";
+                    Pobierzdane(sql);
+                }
+                else if(Rodzaj.Text == "Kredyt mieszkaniowy (4,5%)")
+                {
+                    string sql = "SELECT NumerTransakcji, DataTransakcji, RodzajTransakcji, Kwota FROM KredytMieszkaniowy" + PESEL + " WHERE DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <='" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'";
+                    Pobierzdane(sql);
+                }
+                else if(Rodzaj.Text == "Kredyt samochodowy (3,5%)")
+                {
+                    string sql = "SELECT NumerTransakcji, DataTransakcji, RodzajTransakcji, Kwota FROM KredytSamochodowy" + PESEL + " WHERE DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <='" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'";
+                    Pobierzdane(sql);
+                }
+                else if(Rodzaj.Text == "Lokata studencka (2,5%)")
+                {
+                    string sql = "SELECT NumerTransakcji, DataTransakcji, RodzajTransakcji, Kwota FROM LokataStudencka" + PESEL + " WHERE DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <='" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'";
+                    Pobierzdane(sql);
+                }
+                else if(Rodzaj.Text == "Lokata 365 (3,0%)")
+                {
+                    string sql = "SELECT NumerTransakcji, DataTransakcji, RodzajTransakcji, Kwota FROM Lokata365" + PESEL + " WHERE DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <='" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'";
+                    Pobierzdane(sql);
+                }
+                else if(Rodzaj.Text == "Lokata marzenie (4,5%)")
+                {
+                    string sql = "SELECT NumerTransakcji, DataTransakcji, RodzajTransakcji, Kwota FROM LokataMarzenie" + PESEL + " WHERE DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <='" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'";
+                    Pobierzdane(sql);
+                }
+                else if(Rodzaj.Text == "Pozyczka 365 (5,0%)") 
+                {
+                    string sql = "SELECT NumerTransakcji, DataTransakcji, RodzajTransakcji, Kwota FROM Pozyczka365" + PESEL + " WHERE DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <='" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'";
+                    Pobierzdane(sql);
+                }
+                else if(Rodzaj.Text == "Pozyczka 1 (4,5%)") 
+                {
+                    string sql = "SELECT NumerTransakcji, DataTransakcji, RodzajTransakcji, Kwota FROM Pozyczka1" + PESEL + " WHERE DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <='" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'";
+                    Pobierzdane(sql);
+                }
+                else if(Rodzaj.Text == "Pozyczka 2 (5,2%)")
+                {
+                    string sql = "SELECT NumerTransakcji, DataTransakcji, RodzajTransakcji, Kwota FROM Pozyczka2" + PESEL + " WHERE DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <='" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'";
+                    Pobierzdane(sql);
+                }
+                con.Close();
+            }
+            
+        }
+    }
+}
