@@ -1,0 +1,208 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Drawing;
+using System.Data;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+
+namespace BankPraca
+{
+    public partial class KalkulatorLokata : UserControl
+    {
+        public KalkulatorLokata()
+        {
+            InitializeComponent();
+            wniosekLokata1.SendToBack();
+            wniosekLokata1.Visible = false;
+        }
+
+        private void textBoxKwotaLokaty_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.D0 || e.KeyCode == Keys.D1 || e.KeyCode == Keys.D2 || e.KeyCode == Keys.D3 || e.KeyCode == Keys.D4 || e.KeyCode == Keys.D5 || e.KeyCode == Keys.D6 || e.KeyCode == Keys.D7 || e.KeyCode == Keys.D8 || e.KeyCode == Keys.D9 || e.KeyCode == Keys.NumPad0 || e.KeyCode == Keys.NumPad1 || e.KeyCode == Keys.NumPad2 || e.KeyCode == Keys.NumPad3 || e.KeyCode == Keys.NumPad4 || e.KeyCode == Keys.NumPad5 || e.KeyCode == Keys.NumPad6 || e.KeyCode == Keys.NumPad7 || e.KeyCode == Keys.NumPad8 || e.KeyCode == Keys.NumPad9 || e.KeyCode == Keys.Back)
+            {
+                e.Handled = true;
+            }
+            else
+            {
+                textBoxKwotaLokaty.Clear();
+                MessageBox.Show("Źle wprowadzone. Podaj liczbę.", "Błąd kwota lokaty", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        private void comboBoxRodzajLokaty_KeyUp(object sender, KeyEventArgs e)
+        {
+            comboBoxRodzajLokaty.SelectedItem = "Wybierz";
+            MessageBox.Show("Źle wprowadzone. Wybierz z listy", "Błąd rodzaj lokaty", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+
+        private void buttonOblicz_Click(object sender, EventArgs e)
+        {
+            double FV = 0;
+            double FV1 = 0;
+            double PV = 0;
+            double Op = 0;
+            double n = 0;
+            double t = 0;
+            double OB = 0;
+            double P = 0;
+            double ON = 0;
+    
+            if (textBoxKwotaLokaty.Text.Length == 0)
+            {
+                MessageBox.Show("Źle podana kwota lokaty.", "Błąd kwota lokaty", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+            else if (System.Double.Parse(textBoxKwotaLokaty.Text) < 1000 || System.Double.Parse(textBoxKwotaLokaty.Text) > 1000000)
+            {
+                MessageBox.Show("Kwota lokaty jest za mała, albo za duża. Kwota powinna się mieścić od 1 000zł do 1 000 000 zł.", "Błąd kwota lokaty", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+            else
+            {
+                if (comboBoxRodzajLokaty.Text == "Wybierz")
+                {
+                    MessageBox.Show("Nie wybrano zadnego rodzaju lokaty.", "Błąd rodzaj lokaty", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+                else if (comboBoxRodzajLokaty.Text == "Lokata studencka (2,5%)" )
+                {
+                    if (System.Double.Parse(textBoxKwotaLokaty.Text) >= 1000 && System.Double.Parse(textBoxKwotaLokaty.Text) <= 5000)
+                    {
+                        PV = System.Double.Parse(textBoxKwotaLokaty.Text);
+                        Op = 2.5;
+                        n = 90;
+                        t = 0.25;
+
+                        FV = PV * Math.Pow((1 + Op / 100 / n), t * n);
+                        OB = FV - PV;
+                        OB = Math.Round(OB, 2);
+                        P = OB * 0.19;
+                        P = Math.Round(P, 2);
+                        ON = OB - P;
+                        FV = PV + ON;
+
+                        FV1 = PV * Math.Pow((1 + Op / 100 / n), t * n);
+                        FV1 = Math.Round(FV1, 2);
+
+                        DataTable kalkulator = new DataTable();
+
+                        kalkulator.Columns.Add("", typeof(string));
+                        kalkulator.Columns.Add("", typeof(string));
+
+                        kalkulator.Rows.Add("Kwota lokaty:", textBoxKwotaLokaty.Text+"zł");
+                        kalkulator.Rows.Add("Rodzaj lokaty:", comboBoxRodzajLokaty.Text);
+                        kalkulator.Rows.Add("Oprocentowanie lokaty:", "2,5 %");
+                        kalkulator.Rows.Add("Okres trwania lokaty:", "90 dni (3 miesiące)");
+                        kalkulator.Rows.Add("Rodzaj kapitalizacji:", "Dzienna");
+                        kalkulator.Rows.Add("Zysk brutto:", FV1+"zł");
+                        kalkulator.Rows.Add("Odsetki brutto:", OB+"zł");
+                        kalkulator.Rows.Add("Procent podatkowy", "19%");
+                        kalkulator.Rows.Add("Podatek:", P+"zł");
+                        kalkulator.Rows.Add("Odsetki netto:", ON+"zł");
+                        kalkulator.Rows.Add("Zysk netto:", FV+"zł");
+
+                        dataGridView1.DataSource = kalkulator.DefaultView;
+                    }
+                    else 
+                    {
+                        MessageBox.Show("Podana kwota do wybranej lokaty jest za mała albo za duża. Kwota ta powinna mieścić się od 1 000zł do 5 000zł.", "Błąd kwota lokaty", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
+                }
+                else if(comboBoxRodzajLokaty.Text == "Lokata 365 (3,0%)") 
+                {
+                    if (System.Double.Parse(textBoxKwotaLokaty.Text) >= 5000 && System.Double.Parse(textBoxKwotaLokaty.Text) <= 50000)
+                    {
+                        PV = System.Double.Parse(textBoxKwotaLokaty.Text);
+                        Op = 3.0;
+                        n = 12;
+                        t = 1;
+
+                        FV = PV * Math.Pow((1 + Op / 100 / n), t * n);
+                        OB = FV - PV;
+                        OB = Math.Round(OB, 2);
+                        P = OB * 0.19;
+                        P = Math.Round(P, 2);
+                        ON = OB - P;
+                        FV = PV + ON;
+
+                        FV1 = PV * Math.Pow((1 + Op / 100 / n), t * n);
+                        FV1 = Math.Round(FV1, 2);
+
+                        DataTable kalkulator = new DataTable();
+
+                        kalkulator.Columns.Add("", typeof(string));
+                        kalkulator.Columns.Add("", typeof(string));
+
+                        kalkulator.Rows.Add("Kwota lokaty:", textBoxKwotaLokaty.Text+"zł");
+                        kalkulator.Rows.Add("Rodzaj lokaty:", comboBoxRodzajLokaty.Text);
+                        kalkulator.Rows.Add("Oprocentowanie lokaty:", "3,0 %");
+                        kalkulator.Rows.Add("Okres trwania lokaty:", "365 dni (1 rok)");
+                        kalkulator.Rows.Add("Rodzaj kapitalizacji:", "Miesięczna");
+                        kalkulator.Rows.Add("Zysk brutto:", FV1+"zł");
+                        kalkulator.Rows.Add("Odsetki brutto:", OB+"zł");
+                        kalkulator.Rows.Add("Procent podatkowy", "19%");
+                        kalkulator.Rows.Add("Podatek:", P+"zł");
+                        kalkulator.Rows.Add("Odsetki netto:", ON+"zł");
+                        kalkulator.Rows.Add("Zysk netto:", FV+"zł");
+
+                        dataGridView1.DataSource = kalkulator.DefaultView;
+                    }
+                    else
+                    {
+                        MessageBox.Show("Podana kwota do wybranej lokaty jest za mała albo za duża. Kwota ta powinna mieścić się od 5 000zł do 50 000zł.", "Błąd kwota lokaty", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
+                }
+                else if(comboBoxRodzajLokaty.Text == "Lokata marzenie (4,5%)") 
+                {
+                    if (System.Double.Parse(textBoxKwotaLokaty.Text) >= 50000 && System.Double.Parse(textBoxKwotaLokaty.Text) <= 1000000)
+                    {
+                        PV = System.Double.Parse(textBoxKwotaLokaty.Text);
+                        Op = 4.5;
+                        n = 4;
+                        t = 3;
+
+                        FV = PV * Math.Pow((1 + Op / 100 / n), t * n);
+                        OB = FV - PV;
+                        OB = Math.Round(OB, 2);
+                        P = OB * 0.19;
+                        P = Math.Round(P, 2);
+                        ON = OB - P;
+                        FV = PV + ON;
+
+                        FV1 = PV * Math.Pow((1 + Op / 100 / n), t * n);
+                        FV1 = Math.Round(FV1, 2);
+
+                        DataTable kalkulator = new DataTable();
+
+                        kalkulator.Columns.Add("", typeof(string));
+                        kalkulator.Columns.Add("", typeof(string));
+
+                        kalkulator.Rows.Add("Kwota lokaty:", textBoxKwotaLokaty.Text+"zł");
+                        kalkulator.Rows.Add("Rodzaj lokaty:", comboBoxRodzajLokaty.Text);
+                        kalkulator.Rows.Add("Oprocentowanie lokaty:", "4,5 %");
+                        kalkulator.Rows.Add("Okres trwania lokaty:", "1 095 dni (3 lata)");
+                        kalkulator.Rows.Add("Rodzaj kapitalizacji:", "Kwartalna");
+                        kalkulator.Rows.Add("Zysk brutto:", FV1+"zł");
+                        kalkulator.Rows.Add("Odsetki brutto:", OB+"zł");
+                        kalkulator.Rows.Add("Procent podatkowy", "19%");
+                        kalkulator.Rows.Add("Podatek:", P+"zł");
+                        kalkulator.Rows.Add("Odsetki netto:", ON+"zł");
+                        kalkulator.Rows.Add("Zysk netto:", FV+"zł");
+
+                        dataGridView1.DataSource = kalkulator.DefaultView;
+                    }
+                    else
+                    {
+                        MessageBox.Show("Podana kwota do wybranej lokaty jest za mała albo za duża. Kwota ta powinna mieścić się od 50 000zł do 1 000 000zł.", "Błąd kwota lokaty", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
+                }
+            }
+        }
+
+        private void buttonWniosek_Click(object sender, EventArgs e)
+        {
+            wniosekLokata1.BringToFront();
+            wniosekLokata1.Visible = true;
+        }
+    }
+}
