@@ -1,0 +1,149 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Drawing;
+using System.Data;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Data.SqlClient;
+
+namespace BankPraca
+{
+    public partial class InfoKredyty : UserControl
+    {
+        public static string pesel;
+
+        public InfoKredyty()
+        {
+            InitializeComponent();
+        }
+
+        private void comboBoxRodzajKredytu_KeyUp(object sender, KeyEventArgs e)
+        {
+            comboBoxRodzajKredytu.SelectedItem = "Wybierz";
+            MessageBox.Show("Źle wprowadzone. Wybierz z listy", "Błąd rodzaj kredytu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+
+        private void comboBoxIloscRat_KeyUp(object sender, KeyEventArgs e)
+        {
+            comboBoxIloscRat.SelectedItem = "Wybierz";
+            MessageBox.Show("Źle wprowadzone. Wybierz z listy", "Błąd ilość rat", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+
+        private void Pobierzdane(string sql)
+        {
+
+            SqlConnection polaczenie = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\Monika\Desktop\BankPraca\BazaBank.mdf;Integrated Security=True;Connect Timeout=30");
+            polaczenie.Open();
+            using (SqlCommand sel = new SqlCommand(sql, polaczenie))
+            {
+                DataTable dt = new DataTable();
+                SqlDataAdapter da = new SqlDataAdapter(sel);
+                da.Fill(dt);
+                dataGridView1.DataSource = dt.DefaultView;
+            }
+
+        }
+
+        private void buttonSzukaj_Click(object sender, EventArgs e)
+        {
+            SqlConnection con = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\Monika\Desktop\BankPraca\BazaBank.mdf;Integrated Security=True;Connect Timeout=30");
+            con.Open();
+            SqlDataAdapter sda = new SqlDataAdapter("SELECT Count(*) From Logowanie Where PESEL = '" + StalyLogowanie.pesel + "' AND Kredyt = 'TAK'", con);
+            DataTable da = new DataTable();
+            sda.Fill(da);
+            if (da.Rows[0][0].ToString() == "1")
+            {
+                if(comboBoxRodzajKredytu.Text == "Wybierz") 
+                {
+                    if(comboBoxIloscRat.Text == "Wybierz") 
+                    {
+                        if(comboBoxRodzajRat.Text == "Wybierz") 
+                        {
+                            string sql = "SELECT NumerKredytu, RodzajKredytu, IlośćRat, RodzajRat, WysokośćKredytu FROM InfoKredyty WHERE PESEL = '" + StalyLogowanie.pesel + "' ";
+                            Pobierzdane(sql);
+                        }
+                        else 
+                        {
+                            string sql = "SELECT NumerKredytu, RodzajKredytu, IlośćRat, RodzajRat, WysokośćKredytu FROM InfoKredyty WHERE PESEL = '" + StalyLogowanie.pesel + "' AND RodzajRat = '"+comboBoxRodzajRat.Text+"' ";
+                            Pobierzdane(sql);
+                        }
+                    }
+                    else 
+                    {
+                        if (comboBoxRodzajRat.Text == "Wybierz")
+                        {
+                            string sql = "SELECT NumerKredytu, RodzajKredytu, IlośćRat, RodzajRat, WysokośćKredytu FROM InfoKredyty WHERE PESEL = '" + StalyLogowanie.pesel + "' AND IlośćRat = '"+comboBoxIloscRat.Text+"' ";
+                            Pobierzdane(sql);
+                        }
+                        else
+                        {
+                            string sql = "SELECT NumerKredytu, RodzajKredytu, IlośćRat, RodzajRat, WysokośćKredytu FROM InfoKredyty WHERE PESEL = '" + StalyLogowanie.pesel + "' AND IlośćRat = '"+comboBoxIloscRat.Text+"' AND RodzajRat = '"+comboBoxRodzajRat.Text+"'";
+                            Pobierzdane(sql);
+                        }
+                    }
+                }
+                else 
+                {
+                    if (comboBoxIloscRat.Text == "Wybierz")
+                    {
+                        if (comboBoxRodzajRat.Text == "Wybierz")
+                        {
+                            string sql = "SELECT NumerKredytu, RodzajKredytu, IlośćRat, RodzajRat, WysokośćKredytu FROM InfoKredyty WHERE PESEL = '" + StalyLogowanie.pesel + "' AND RodzajKredytu = '"+comboBoxRodzajKredytu.Text+"'";
+                            Pobierzdane(sql);
+                        }
+                        else
+                        {
+                            string sql = "SELECT NumerKredytu, RodzajKredytu, IlośćRat, RodzajRat, WysokośćKredytu FROM InfoKredyty WHERE PESEL = '" + StalyLogowanie.pesel + "' AND RodzajKredytu = '" + comboBoxRodzajKredytu.Text + "' AND RodzajRat = '"+comboBoxRodzajRat.Text+"'";
+                            Pobierzdane(sql);
+                        }
+                    }
+                    else
+                    {
+                        if (comboBoxRodzajRat.Text == "Wybierz")
+                        {
+                            string sql = "SELECT NumerKredytu, RodzajKredytu, IlośćRat, RodzajRat, WysokośćKredytu FROM InfoKredyty WHERE PESEL = '" + StalyLogowanie.pesel + "' AND RodzajKredytu = '" + comboBoxRodzajKredytu.Text + "' AND IlośćRat = '"+comboBoxIloscRat.Text+"'";
+                            Pobierzdane(sql);
+                        }
+                        else
+                        {
+                            string sql = "SELECT NumerKredytu, RodzajKredytu, IlośćRat, RodzajRat, WysokośćKredytu FROM InfoKredyty WHERE PESEL = '" + StalyLogowanie.pesel + "' AND RodzajKredytu = '" + comboBoxRodzajKredytu.Text + "' AND IlośćRat = '"+comboBoxIloscRat.Text+"' AND RodzajRat = '"+comboBoxRodzajRat.Text+"'";
+                            Pobierzdane(sql);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                MessageBox.Show("Nie posiadasz żadnego kredytu dla danego numeru PESEL.", "Brak kredytu", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            con.Close();
+        }
+
+        private void comboBoxRodzajRat_KeyUp(object sender, KeyEventArgs e)
+        {
+            comboBoxRodzajRat.SelectedItem = "Wybierz";
+            MessageBox.Show("Źle wprowadzone. Wybierz z listy", "Błąd rodzaj rat", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+
+        private void dataGridView1_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
+        {
+            Informacje f2 = new Informacje();
+            f2.Usluga.Text = "Rodzaj kredytu:";
+            f2.Kwota.Text = "Wysokość kredytu:";
+            f2.IloscRat1.Text = "Ilość rat:";
+            f2.RodzajRat1.Text = "Rodzaj Rat:";
+            f2.Rodzaj.Text = dataGridView1.CurrentRow.Cells[1].Value.ToString();
+            f2.IloscRat.Text = dataGridView1.CurrentRow.Cells[2].Value.ToString();
+            f2.RodzajRat.Text = dataGridView1.CurrentRow.Cells[3].Value.ToString();
+            f2.Wysokosc.Text = dataGridView1.CurrentRow.Cells[4].Value.ToString();
+            pesel = StalyLogowanie.pesel;
+            Informacje.PESEL = pesel;
+
+            f2.BringToFront();
+            f2.Show();
+        }
+    }
+}
