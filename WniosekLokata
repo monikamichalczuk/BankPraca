@@ -1,0 +1,469 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Drawing;
+using System.Data;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Data.SqlClient;
+
+namespace BankPraca
+{
+    public partial class WniosekLokata : UserControl
+    {
+        public WniosekLokata()
+        {
+            InitializeComponent();
+        }
+
+        private void buttonZamknij_Click(object sender, EventArgs e)
+        {
+            this.Hide();
+            this.Visible = false;
+            this.SendToBack();
+        }
+
+        private void textBoxPesel_KeyUp(object sender, KeyEventArgs e)
+        {
+            textBoxPesel.Text = StalyLogowanie.pesel;
+        }
+
+        private void textBoxWplataLokata_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Tab || e.KeyCode == Keys.D0 || e.KeyCode == Keys.D1 || e.KeyCode == Keys.D2 || e.KeyCode == Keys.D3 || e.KeyCode == Keys.D4 || e.KeyCode == Keys.D5 || e.KeyCode == Keys.D6 || e.KeyCode == Keys.D7 || e.KeyCode == Keys.D8 || e.KeyCode == Keys.D9 || e.KeyCode == Keys.NumPad0 || e.KeyCode == Keys.NumPad1 || e.KeyCode == Keys.NumPad2 || e.KeyCode == Keys.NumPad3 || e.KeyCode == Keys.NumPad4 || e.KeyCode == Keys.NumPad5 || e.KeyCode == Keys.NumPad6 || e.KeyCode == Keys.NumPad7 || e.KeyCode == Keys.NumPad8 || e.KeyCode == Keys.NumPad9 || e.KeyCode == Keys.Back)
+            {
+                e.Handled = true;
+            }
+            else
+            {
+                textBoxWplataLokata.Clear();
+                MessageBox.Show("Źle wprowadzone. Podaj liczbę.", "Błąd wpłata lokata", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        private void comboBoxRodzajLokaty_KeyUp(object sender, KeyEventArgs e)
+        {
+            comboBoxRodzajLokaty.SelectedItem = "Wybierz";
+            MessageBox.Show("Źle wprowadzone. Wybierz z listy", "Błąd rodzaj lokaty", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+
+        private void buttonWnioskuj_Click(object sender, EventArgs e)
+        {
+            if(textBoxImie.Text.Length < 3 || textBoxImie.Text.Length > 20) 
+            {
+                MessageBox.Show("Źle zostało podane imię. Jest zbyt krótkie albo za długie. Imię powinno składać się od 3 do 20 znaków.", "Błąd imię", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+            else 
+            {
+                if(textBoxNazwisko.Text.Length < 3 || textBoxNazwisko.Text.Length > 50) 
+                {
+                    MessageBox.Show("Źle zostało podane nazwisko. Jest zbyt krótkie albo za długie. Nazwisko powinno składać się od 3 do 50-ciu znaków.", "Błąd nazwisko", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+                else 
+                {
+                    if(textBoxPesel.Text.Length == 11) 
+                    {
+                        if(textBoxNumerDowodu.Text.Length == 9) 
+                        {
+                            if(comboBoxRodzajLokaty.Text == "Wybierz") 
+                            {
+                                MessageBox.Show("Nie został wybrany żaden rodzaj lokaty. Wybierz z podanych", "Błąd rodzaj lokaty", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            }
+                            else if (comboBoxRodzajLokaty.Text == "Lokata studencka (2,5%)" || comboBoxRodzajLokaty.Text == "Lokata 365 (3,0%)" || comboBoxRodzajLokaty.Text == "Lokata marzenie (4,5%)")
+                            {
+                                if (textBoxWplataLokata.Text.Length == 0)
+                                {
+                                    MessageBox.Show("Brak kwoty wpłaty. Podaj jakąś kwotę.", "Błąd kwota wpłaty", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                }
+                                else
+                                {
+                                    if (System.Double.Parse(textBoxWplataLokata.Text) < 1000 || System.Double.Parse(textBoxWplataLokata.Text) > 1000000)
+                                    {
+                                        MessageBox.Show("Podana kwota jest za mała albo za duża. Musi być conajmniej 1 000zł, ale jendocześnie mniej niż 1 000 000zł.", "Błąd kwota wpłaty", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                    }
+                                    else
+                                    {
+                                        SqlConnection con = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\Monika\Desktop\BankPraca\BazaBank.mdf;Integrated Security=True;Connect Timeout=30");
+                                        con.Open();
+
+                                        if (comboBoxRodzajLokaty.Text == "Lokata studencka (2,5%)")
+                                        {
+                                            if (System.Double.Parse(textBoxWplataLokata.Text) >= 1000 && System.Double.Parse(textBoxWplataLokata.Text) <= 5000)
+                                            {
+                                                SqlDataAdapter sdc = new SqlDataAdapter("SELECT Count(*) From Logowanie Where PESEL = '" + StalyLogowanie.pesel + "' AND Lokata = 'TAK'", con);
+                                                DataTable dc = new DataTable();
+                                                sdc.Fill(dc);
+                                                if (dc.Rows[0][0].ToString() == "1")
+                                                {
+                                                    SqlDataAdapter sdh = new SqlDataAdapter("SELECT Count(*) From InfoLokaty Where PESEL = '" + StalyLogowanie.pesel + "' AND RodzajLokaty = '" + comboBoxRodzajLokaty.Text + "'", con);
+                                                    DataTable dh = new DataTable();
+                                                    sdh.Fill(dh);
+                                                    if (dh.Rows[0][0].ToString() == "1")
+                                                    {
+                                                        MessageBox.Show("Do podanego numeru PESEL istnieje podana lokata. Można mieć maksymalnie trzy różne lokaty.", "Błąd lokata", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                                    }
+                                                    else
+                                                    {
+                                                        Random zmienna = new Random();
+                                                        double a = zmienna.Next(100000000, 999999999);
+
+                                                        SqlDataAdapter sdd = new SqlDataAdapter("SELECT Count(*) From InfoLokaty Where NumerLokaty = " + a + "", con);
+                                                        DataTable dd = new DataTable();
+                                                        sdd.Fill(dd);
+                                                        if (dd.Rows[0][0].ToString() == "1")
+                                                        {
+                                                            MessageBox.Show("Wylosowany numer lokaty istnieje w bazie danych. Spróbuj ponownie.", "Błąd numer lokaty", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                                        }
+                                                        else
+                                                        {
+                                                            Random zmienna1 = new Random();
+                                                            double w = zmienna1.Next(100000000, 999999999);
+
+                                                            SqlCommand command1 = new SqlCommand("CREATE TABLE LokataStudencka" + StalyLogowanie.pesel + "(NumerTransakcji BIGINT NOT NULL, DataTransakcji DATE NOT NULL, RodzajTransakcji VARCHAR(50) NOT NULL, Kwota DECIMAL(18,2) NOT NULL, CONSTRAINT PK_NumerTransakcjiLS" + StalyLogowanie.pesel + " PRIMARY KEY CLUSTERED(NumerTransakcji));", con);
+                                                            command1.ExecuteNonQuery();
+                                                            SqlCommand command3 = new SqlCommand("INSERT INTO LokataStudencka" + StalyLogowanie.pesel + " VALUES(" + w + ",'" + DateTime.Today.ToString("yyyy-MM-dd") + "','WPŁATA'," + System.Decimal.Parse(textBoxWplataLokata.Text) + ")", con);
+                                                            command3.ExecuteNonQuery();
+
+                                                            SqlCommand command2 = new SqlCommand("INSERT INTO InfoLokaty VALUES(" + a + ",'" + StalyLogowanie.pesel + "','" + comboBoxRodzajLokaty.Text + "'," + System.Decimal.Parse(textBoxWplataLokata.Text) + ")", con);
+                                                            command2.ExecuteNonQuery();
+                                                            MessageBox.Show("Dane zostały zaktualizowane. Wybrana przez Ciebie lokata została przydzielona.", "Założenie lokaty", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                                        }
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    Random zmienna = new Random();
+                                                    double a = zmienna.Next(100000000, 999999999);
+
+                                                    SqlDataAdapter sdd = new SqlDataAdapter("SELECT Count(*) From InfoLokaty Where NumerLokaty = " + a + "", con);
+                                                    DataTable dd = new DataTable();
+                                                    sdd.Fill(dd);
+                                                    if (dd.Rows[0][0].ToString() == "1")
+                                                    {
+                                                        MessageBox.Show("Wylosowany numer lokaty istnieje w bazie danych. Spróbuj ponownie.", "Błąd numer lokaty", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                                    }
+                                                    else
+                                                    {
+                                                        SqlCommand command = new SqlCommand("UPDATE Logowanie SET Lokata = 'TAK' WHERE PESEL = '" + StalyLogowanie.pesel + "'", con);
+                                                        command.ExecuteNonQuery();
+
+                                                        Random zmienna1 = new Random();
+                                                        double w = zmienna1.Next(100000000, 999999999);
+
+                                                        SqlCommand command1 = new SqlCommand("CREATE TABLE LokataStudencka" + StalyLogowanie.pesel + "(NumerTransakcji BIGINT NOT NULL, DataTransakcji DATE NOT NULL, RodzajTransakcji VARCHAR(50) NOT NULL, Kwota DECIMAL(18,2) NOT NULL, CONSTRAINT PK_NumerTransakcjiLS" + StalyLogowanie.pesel + " PRIMARY KEY CLUSTERED(NumerTransakcji));", con);
+                                                        command1.ExecuteNonQuery();
+                                                        SqlCommand command3 = new SqlCommand("INSERT INTO LokataStudencka" + StalyLogowanie.pesel + " VALUES(" + w + ",'" + DateTime.Today.ToString("yyyy-MM-dd") + "','WPŁATA'," + System.Decimal.Parse(textBoxWplataLokata.Text) + ")", con);
+                                                        command3.ExecuteNonQuery();
+
+                                                        SqlCommand command2 = new SqlCommand("INSERT INTO InfoLokaty VALUES(" + a + ",'" + StalyLogowanie.pesel + "','" + comboBoxRodzajLokaty.Text + "'," + System.Decimal.Parse(textBoxWplataLokata.Text) + ")", con);
+                                                        command2.ExecuteNonQuery();
+                                                        MessageBox.Show("Dane zostały zaktualizowane. Wybrana przez Ciebie lokata została przydzielona.", "Założenie lokaty", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                                    }
+                                                }
+                                            }
+                                            else
+                                            {
+                                                MessageBox.Show("Źle została podana kwota do lokaty studenckiej. Kwota ta powinna być od 1 000zł do 5 000zł.", "Błąd kwota wpłaty", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                            }
+                                        }
+                                        else if (comboBoxRodzajLokaty.Text == "Lokata 365 (3,0%)")
+                                        {
+                                            if (System.Double.Parse(textBoxWplataLokata.Text) >= 5000 && System.Double.Parse(textBoxWplataLokata.Text) <= 50000)
+                                            {
+                                                SqlDataAdapter sdc = new SqlDataAdapter("SELECT Count(*) From Logowanie Where PESEL = '" + StalyLogowanie.pesel + "' AND Lokata = 'TAK'", con);
+                                                DataTable dc = new DataTable();
+                                                sdc.Fill(dc);
+                                                if (dc.Rows[0][0].ToString() == "1")
+                                                {
+                                                    SqlDataAdapter sdh = new SqlDataAdapter("SELECT Count(*) From InfoLokaty Where PESEL = '" + StalyLogowanie.pesel + "' AND RodzajLokaty = '" + comboBoxRodzajLokaty.Text + "'", con);
+                                                    DataTable dh = new DataTable();
+                                                    sdh.Fill(dh);
+                                                    if (dh.Rows[0][0].ToString() == "1")
+                                                    {
+                                                        MessageBox.Show("Do podanego numeru PESEL istnieje podana lokata. Można mieć maksymalnie trzy różne lokaty.", "Błąd lokata", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                                    }
+                                                    else
+                                                    {
+                                                        Random zmienna = new Random();
+                                                        double a = zmienna.Next(100000000, 999999999);
+
+                                                        SqlDataAdapter sdd = new SqlDataAdapter("SELECT Count(*) From InfoLokaty Where NumerLokaty = " + a + "", con);
+                                                        DataTable dd = new DataTable();
+                                                        sdd.Fill(dd);
+                                                        if (dd.Rows[0][0].ToString() == "1")
+                                                        {
+                                                            MessageBox.Show("Wylosowany numer lokaty istnieje w bazie danych. Spróbuj ponownie.", "Błąd numer lokaty", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                                        }
+                                                        else
+                                                        {
+                                                            Random zmienna1 = new Random();
+                                                            double w = zmienna1.Next(100000000, 999999999);
+
+                                                            SqlCommand command1 = new SqlCommand("CREATE TABLE Lokata365" + StalyLogowanie.pesel + "(NumerTransakcji BIGINT NOT NULL, DataTransakcji DATE NOT NULL, RodzajTransakcji VARCHAR(50) NOT NULL, Kwota DECIMAL(18,2) NOT NULL, CONSTRAINT PK_NumerTransakcjiL365" + StalyLogowanie.pesel + " PRIMARY KEY CLUSTERED(NumerTransakcji));", con);
+                                                            command1.ExecuteNonQuery();
+                                                            SqlCommand command3 = new SqlCommand("INSERT INTO Lokata365" + StalyLogowanie.pesel + " VALUES(" + w + ",'" + DateTime.Today.ToString("yyyy-MM-dd") + "','WPŁATA'," + System.Decimal.Parse(textBoxWplataLokata.Text) + ")", con);
+                                                            command3.ExecuteNonQuery();
+
+                                                            SqlCommand command2 = new SqlCommand("INSERT INTO InfoLokaty VALUES(" + a + ",'" + StalyLogowanie.pesel + "','" + comboBoxRodzajLokaty.Text + "'," + System.Decimal.Parse(textBoxWplataLokata.Text) + ")", con);
+                                                            command2.ExecuteNonQuery();
+                                                            MessageBox.Show("Dane zostały zaktualizowane. Wybrana przez Ciebie lokata została przydzielona.", "Założenie lokaty", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                                        }
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    Random zmienna = new Random();
+                                                    double a = zmienna.Next(100000000, 999999999);
+
+                                                    SqlDataAdapter sdd = new SqlDataAdapter("SELECT Count(*) From InfoLokaty Where NumerLokaty = " + a + "", con);
+                                                    DataTable dd = new DataTable();
+                                                    sdd.Fill(dd);
+                                                    if (dd.Rows[0][0].ToString() == "1")
+                                                    {
+                                                        MessageBox.Show("Wylosowany numer lokaty istnieje w bazie danych. Spróbuj ponownie.", "Błąd numer lokaty", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                                    }
+                                                    else
+                                                    {
+                                                        SqlCommand command = new SqlCommand("UPDATE Logowanie SET Lokata = 'TAK' WHERE PESEL = '" + StalyLogowanie.pesel + "'", con);
+                                                        command.ExecuteNonQuery();
+
+                                                        Random zmienna1 = new Random();
+                                                        double w = zmienna1.Next(100000000, 999999999);
+
+                                                        SqlCommand command1 = new SqlCommand("CREATE TABLE Lokata365" + StalyLogowanie.pesel + "(NumerTransakcji BIGINT NOT NULL, DataTransakcji DATE NOT NULL, RodzajTransakcji VARCHAR(50) NOT NULL, Kwota DECIMAL(18,2) NOT NULL, CONSTRAINT PK_NumerTransakcjiL365" + StalyLogowanie.pesel + " PRIMARY KEY CLUSTERED(NumerTransakcji));", con);
+                                                        command1.ExecuteNonQuery();
+                                                        SqlCommand command3 = new SqlCommand("INSERT INTO Lokata365" + StalyLogowanie.pesel + " VALUES(" + w + ",'" + DateTime.Today.ToString("yyyy-MM-dd") + "','WPŁATA'," + System.Decimal.Parse(textBoxWplataLokata.Text) + ")", con);
+                                                        command3.ExecuteNonQuery();
+
+                                                        SqlCommand command2 = new SqlCommand("INSERT INTO InfoLokaty VALUES(" + a + ",'" + StalyLogowanie.pesel + "','" + comboBoxRodzajLokaty.Text + "'," + System.Decimal.Parse(textBoxWplataLokata.Text) + ")", con);
+                                                        command2.ExecuteNonQuery();
+                                                        MessageBox.Show("Dane zostały zaktualizowane. Wybrana przez Ciebie lokata została przydzielona.", "Założenie lokaty", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                                    }
+                                                }
+                                            }
+                                            else
+                                            {
+                                                MessageBox.Show("Źle została podana kwota do lokaty 365. Kwota ta powinna być od 5 000zł do 50 000zł.", "Błąd kwota wpłaty", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                            }
+
+                                        }
+                                        else if (comboBoxRodzajLokaty.Text == "Lokata marzenie (4,5%)")
+                                        {
+                                            if (System.Double.Parse(textBoxWplataLokata.Text) >= 50000 && System.Double.Parse(textBoxWplataLokata.Text) <= 1000000)
+                                            {
+                                                SqlDataAdapter sdc = new SqlDataAdapter("SELECT Count(*) From Logowanie Where PESEL = '" + StalyLogowanie.pesel + "' AND Lokata = 'TAK'", con);
+                                                DataTable dc = new DataTable();
+                                                sdc.Fill(dc);
+                                                if (dc.Rows[0][0].ToString() == "1")
+                                                {
+                                                    SqlDataAdapter sdh = new SqlDataAdapter("SELECT Count(*) From InfoLokaty Where PESEL = '" + StalyLogowanie.pesel + "' AND RodzajLokaty = '" + comboBoxRodzajLokaty.Text + "'", con);
+                                                    DataTable dh = new DataTable();
+                                                    sdh.Fill(dh);
+                                                    if (dh.Rows[0][0].ToString() == "1")
+                                                    {
+                                                        MessageBox.Show("Do podanego numeru PESEL istnieje podana lokata. Można mieć maksymalnie trzy różne lokaty.", "Błąd lokata", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                                    }
+                                                    else
+                                                    {
+                                                        Random zmienna = new Random();
+                                                        double a = zmienna.Next(100000000, 999999999);
+
+                                                        SqlDataAdapter sdd = new SqlDataAdapter("SELECT Count(*) From InfoLokaty Where NumerLokaty = " + a + "", con);
+                                                        DataTable dd = new DataTable();
+                                                        sdd.Fill(dd);
+                                                        if (dd.Rows[0][0].ToString() == "1")
+                                                        {
+                                                            MessageBox.Show("Wylosowany numer lokaty istnieje w bazie danych. Spróbuj ponownie.", "Błąd numer lokaty", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                                        }
+                                                        else
+                                                        {
+                                                            Random zmienna1 = new Random();
+                                                            double w = zmienna1.Next(100000000, 999999999);
+
+                                                            SqlCommand command1 = new SqlCommand("CREATE TABLE LokataMarzenie" + StalyLogowanie.pesel + "(NumerTransakcji BIGINT NOT NULL, DataTransakcji DATE NOT NULL, RodzajTransakcji VARCHAR(50) NOT NULL, Kwota DECIMAL(18,2) NOT NULL, CONSTRAINT PK_NumerTransakcjiLM" + StalyLogowanie.pesel + " PRIMARY KEY CLUSTERED(NumerTransakcji));", con);
+                                                            command1.ExecuteNonQuery();
+                                                            SqlCommand command3 = new SqlCommand("INSERT INTO LokataMarzenie" + StalyLogowanie.pesel + " VALUES(" + w + ",'" + DateTime.Today.ToString("yyyy-MM-dd") + "','WPŁATA'," + System.Decimal.Parse(textBoxWplataLokata.Text) + ")", con);
+                                                            command3.ExecuteNonQuery();
+
+                                                            SqlCommand command2 = new SqlCommand("INSERT INTO InfoLokaty VALUES(" + a + ",'" + StalyLogowanie.pesel + "','" + comboBoxRodzajLokaty.Text + "'," + System.Decimal.Parse(textBoxWplataLokata.Text) + ")", con);
+                                                            command2.ExecuteNonQuery();
+                                                            MessageBox.Show("Dane zostały zaktualizowane. Wybrana przez Ciebie lokata została przydzielona.", "Założenie lokaty", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                                        }
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    Random zmienna = new Random();
+                                                    double a = zmienna.Next(100000000, 999999999);
+
+                                                    SqlDataAdapter sdd = new SqlDataAdapter("SELECT Count(*) From InfoLokaty Where NumerLokaty = " + a + "", con);
+                                                    DataTable dd = new DataTable();
+                                                    sdd.Fill(dd);
+                                                    if (dd.Rows[0][0].ToString() == "1")
+                                                    {
+                                                        MessageBox.Show("Wylosowany numer lokaty istnieje w bazie danych. Spróbuj ponownie.", "Błąd numer lokaty", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                                    }
+                                                    else
+                                                    {
+                                                        SqlCommand command = new SqlCommand("UPDATE Logowanie SET Lokata = 'TAK' WHERE PESEL = '" + StalyLogowanie.pesel + "'", con);
+                                                        command.ExecuteNonQuery();
+
+                                                        Random zmienna1 = new Random();
+                                                        double w = zmienna1.Next(100000000, 999999999);
+
+                                                        SqlCommand command1 = new SqlCommand("CREATE TABLE LokataMarzenie" + StalyLogowanie.pesel + "(NumerTransakcji BIGINT NOT NULL, DataTransakcji DATE NOT NULL, RodzajTransakcji VARCHAR(50) NOT NULL, Kwota DECIMAL(18,2) NOT NULL, CONSTRAINT PK_NumerTransakcjiLM" + StalyLogowanie.pesel + " PRIMARY KEY CLUSTERED(NumerTransakcji));", con);
+                                                        command1.ExecuteNonQuery();
+                                                        SqlCommand command3 = new SqlCommand("INSERT INTO LokataMarzenie" + StalyLogowanie.pesel + " VALUES(" + w + ",'" + DateTime.Today.ToString("yyyy-MM-dd") + "','WPŁATA'," + System.Decimal.Parse(textBoxWplataLokata.Text) + ")", con);
+                                                        command3.ExecuteNonQuery();
+
+                                                        SqlCommand command2 = new SqlCommand("INSERT INTO InfoLokaty VALUES(" + a + ",'" + StalyLogowanie.pesel + "','" + comboBoxRodzajLokaty.Text + "'," + System.Decimal.Parse(textBoxWplataLokata.Text) + ")", con);
+                                                        command2.ExecuteNonQuery();
+                                                        MessageBox.Show("Dane zostały zaktualizowane. Wybrana przez Ciebie lokata została przydzielona.", "Założenie lokaty", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                                    }
+                                                }
+                                            }
+                                            else
+                                            {
+                                                MessageBox.Show("Źle została podana kwota do lokaty marzenie. Kwota ta powinna być od 50 000zł do 1 000 000zł.", "Błąd kwota wpłaty", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                            }
+
+                                        }
+                                        else
+                                        {
+                                            MessageBox.Show("Nie została wybrana żadna lokata. Proszę wybrać z podanych opcji", "Błąd rodzaj lokaty", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                        }
+                                        con.Close();
+                                    }
+                                }
+                            }
+                        }
+                        else 
+                        {
+                            MessageBox.Show("Źle został podany numer dowodu osobistego. Numer dowodu powinien składać się z 9-ciu znaków.", "Błąd numer dowodu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        }
+                    }
+                    else 
+                    {
+                        MessageBox.Show("Źle został podany numer PESEL. Numer PESEL musi mieć 11 cyfr.", "Błąd numer PESEL", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
+                }
+            }
+        }
+
+        private void textBoxImie_KeyUp(object sender, KeyEventArgs e)
+        {
+            SqlConnection con = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\Monika\Desktop\BankPraca\BazaBank.mdf;Integrated Security=True;Connect Timeout=30");
+            con.Open();
+
+            string imie;
+            SqlCommand query = new SqlCommand("SELECT Imię FROM InfoKlienci WHERE PESEL = '" + StalyLogowanie.pesel + "'", con);
+            SqlDataReader queryResult = query.ExecuteReader();
+            DataTable di = new DataTable();
+            di.Load(queryResult);
+            DataRow dw = di.Rows[0];
+            imie = dw[0].ToString();
+            textBoxImie.Text = imie;
+
+            con.Close();
+        }
+
+        private void textBoxNazwisko_KeyUp(object sender, KeyEventArgs e)
+        {
+            SqlConnection con = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\Monika\Desktop\BankPraca\BazaBank.mdf;Integrated Security=True;Connect Timeout=30");
+            con.Open();
+
+            string nazwisko;
+            SqlCommand query = new SqlCommand("SELECT Nazwisko FROM InfoKlienci WHERE PESEL = '" + StalyLogowanie.pesel + "'", con);
+            SqlDataReader queryResult = query.ExecuteReader();
+            DataTable di = new DataTable();
+            di.Load(queryResult);
+            DataRow dw = di.Rows[0];
+            nazwisko = dw[0].ToString();
+            textBoxNazwisko.Text = nazwisko;
+
+            con.Close();
+        }
+
+        private void textBoxNumerDowodu_KeyUp(object sender, KeyEventArgs e)
+        {
+            SqlConnection con = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\Monika\Desktop\BankPraca\BazaBank.mdf;Integrated Security=True;Connect Timeout=30");
+            con.Open();
+
+            string dowod;
+            SqlCommand query = new SqlCommand("SELECT NumerDowodu FROM InfoKlienci WHERE PESEL = '" + StalyLogowanie.pesel + "'", con);
+            SqlDataReader queryResult = query.ExecuteReader();
+            DataTable di = new DataTable();
+            di.Load(queryResult);
+            DataRow dw = di.Rows[0];
+            dowod = dw[0].ToString();
+            textBoxNumerDowodu.Text = dowod;
+
+            con.Close();
+        }
+
+        private void dateTimePickerDataUrodzenia_ValueChanged(object sender, EventArgs e)
+        {
+            SqlConnection con = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\Monika\Desktop\BankPraca\BazaBank.mdf;Integrated Security=True;Connect Timeout=30");
+            con.Open();
+
+            string dataur;
+            SqlCommand query3 = new SqlCommand("SELECT DataUrodzenia FROM InfoKlienci WHERE PESEL = '" + StalyLogowanie.pesel + "'", con);
+            SqlDataReader queryResult3 = query3.ExecuteReader();
+            DataTable de = new DataTable();
+            de.Load(queryResult3);
+            DataRow df = de.Rows[0];
+            dataur = df[0].ToString();
+            dateTimePickerDataUrodzenia.Value = DateTime.Parse(dataur);
+
+            con.Close();
+        }
+
+        private void WniosekLokata_Load(object sender, EventArgs e)
+        {
+            textBoxPesel.Text = StalyLogowanie.pesel;
+
+            SqlConnection con = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\Monika\Desktop\BankPraca\BazaBank.mdf;Integrated Security=True;Connect Timeout=30");
+            con.Open();
+
+            string dowod;
+            SqlCommand query = new SqlCommand("SELECT NumerDowodu FROM InfoKlienci WHERE PESEL = '" + StalyLogowanie.pesel + "'", con);
+            SqlDataReader queryResult = query.ExecuteReader();
+            DataTable di = new DataTable();
+            di.Load(queryResult);
+            DataRow dw = di.Rows[0];
+            dowod = dw[0].ToString();
+            textBoxNumerDowodu.Text = dowod;
+
+            string imie;
+            SqlCommand query1 = new SqlCommand("SELECT Imię FROM InfoKlienci WHERE PESEL = '" + StalyLogowanie.pesel + "'", con);
+            SqlDataReader queryResult1 = query1.ExecuteReader();
+            DataTable da = new DataTable();
+            da.Load(queryResult1);
+            DataRow db = da.Rows[0];
+            imie = db[0].ToString();
+            textBoxImie.Text = imie;
+
+            string nazwisko;
+            SqlCommand query2 = new SqlCommand("SELECT Nazwisko FROM InfoKlienci WHERE PESEL = '" + StalyLogowanie.pesel + "'", con);
+            SqlDataReader queryResult2 = query2.ExecuteReader();
+            DataTable dc = new DataTable();
+            dc.Load(queryResult2);
+            DataRow dd = dc.Rows[0];
+            nazwisko = dd[0].ToString();
+            textBoxNazwisko.Text = nazwisko;
+
+            string dataur;
+            SqlCommand query3 = new SqlCommand("SELECT DataUrodzenia FROM InfoKlienci WHERE PESEL = '" + StalyLogowanie.pesel + "'", con);
+            SqlDataReader queryResult3 = query3.ExecuteReader();
+            DataTable de = new DataTable();
+            de.Load(queryResult3);
+            DataRow df = de.Rows[0];
+            dataur = df[0].ToString();
+            dateTimePickerDataUrodzenia.Value = DateTime.Parse(dataur);
+
+            con.Close();
+        }
+    }
+}
