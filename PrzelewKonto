@@ -1,0 +1,267 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Drawing;
+using System.Data;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Data.SqlClient;
+using System.Numerics;
+
+namespace BankPraca
+{
+    public partial class PrzelewKonto : UserControl
+    {
+        public PrzelewKonto()
+        {
+            InitializeComponent();
+        }
+
+        private void comboBoxRodzajKonta_KeyUp(object sender, KeyEventArgs e)
+        {
+            comboBoxRodzajKonta.SelectedItem = "Wybierz";
+            MessageBox.Show("Źle wprowadzone. Wybierz z listy", "Błąd rodzaj konta", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+
+        private void textBoxNumerKonta_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Tab || e.KeyCode == Keys.D0 || e.KeyCode == Keys.D1 || e.KeyCode == Keys.D2 || e.KeyCode == Keys.D3 || e.KeyCode == Keys.D4 || e.KeyCode == Keys.D5 || e.KeyCode == Keys.D6 || e.KeyCode == Keys.D7 || e.KeyCode == Keys.D8 || e.KeyCode == Keys.D9 || e.KeyCode == Keys.NumPad0 || e.KeyCode == Keys.NumPad1 || e.KeyCode == Keys.NumPad2 || e.KeyCode == Keys.NumPad3 || e.KeyCode == Keys.NumPad4 || e.KeyCode == Keys.NumPad5 || e.KeyCode == Keys.NumPad6 || e.KeyCode == Keys.NumPad7 || e.KeyCode == Keys.NumPad8 || e.KeyCode == Keys.NumPad9 || e.KeyCode == Keys.Back)
+            {
+                e.Handled = true;
+            }
+            else
+            {
+                textBoxNumerKonta.Clear();
+                MessageBox.Show("Źle wprowadzone. Podaj ciąg cyfr.", "Błąd numer konta", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        private void textBoxKwota_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Tab || e.KeyCode == Keys.D0 || e.KeyCode == Keys.D1 || e.KeyCode == Keys.D2 || e.KeyCode == Keys.D3 || e.KeyCode == Keys.D4 || e.KeyCode == Keys.D5 || e.KeyCode == Keys.D6 || e.KeyCode == Keys.D7 || e.KeyCode == Keys.D8 || e.KeyCode == Keys.D9 || e.KeyCode == Keys.NumPad0 || e.KeyCode == Keys.NumPad1 || e.KeyCode == Keys.NumPad2 || e.KeyCode == Keys.NumPad3 || e.KeyCode == Keys.NumPad4 || e.KeyCode == Keys.NumPad5 || e.KeyCode == Keys.NumPad6 || e.KeyCode == Keys.NumPad7 || e.KeyCode == Keys.NumPad8 || e.KeyCode == Keys.NumPad9 || e.KeyCode == Keys.Back)
+            {
+                e.Handled = true;
+            }
+            else
+            {
+                textBoxKwota.Clear();
+                MessageBox.Show("Źle wprowadzone. Podaj liczbę.", "Błąd kwota", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        private void buttonPrzelej_Click(object sender, EventArgs e)
+        {
+            if (textBoxImie.Text.Length < 3 || textBoxImie.Text.Length > 20)
+            {
+                MessageBox.Show("Źle zostało podane imię. Jest zbyt krótkie albo za długie. Imię powinno się składać od 3 do 20 znaków.", "Błąd imię", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+            else
+            {
+                if (textBoxNazwisko.Text.Length < 3 || textBoxNazwisko.Text.Length > 50)
+                {
+                    MessageBox.Show("Źle zostało podane nazwisko. Jest zbyt krótkie bądź za długie. Nazwisko powinno się składać od 3 do 50-ciu znaków.", "Błąd nazwisko", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+                else
+                {
+                    if (textBoxNumerKonta.Text.Length == 26)
+                    {
+                        if (comboBoxRodzajKonta.Text == "Wybierz")
+                        {
+                            MessageBox.Show("Nie wybrano rodzaju konta. Wybierz z podanych.", "Błąd rodzaj konta", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        }
+                        else
+                        {
+                            if (textBoxKwota.Text.Length == 0)
+                            {
+                                MessageBox.Show("Brak kwoty do przelewu. Podaj kwotę.", "Brak kwoty przelewu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            }
+                            else
+                            {
+                                if (System.Decimal.Parse(textBoxKwota.Text) < 1 || System.Decimal.Parse(textBoxKwota.Text) > 3000)
+                                {
+                                    MessageBox.Show("Kwota do przelewu jest za mała bądź za duża. Kwota ta musi być conajmniej 1zł, ale jednocześnie mniejsza niż 3 000zł.", "Błąd kwota przelewu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                }
+                                else
+                                {
+                                    SqlConnection con = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\Monika\Desktop\BankPraca\BazaBank.mdf;Integrated Security=True;Connect Timeout=30");
+                                    con.Open();
+                                    SqlDataAdapter sda = new SqlDataAdapter("SELECT Count(*) From InfoKonto Where NumerKonta = " + BigInteger.Parse(textBoxNumerKonta.Text) + "", con);
+                                    DataTable da = new DataTable();
+                                    sda.Fill(da);
+                                    if (da.Rows[0][0].ToString() == "1")
+                                    {
+                                        string pesel1;
+                                        SqlCommand query = new SqlCommand("SELECT PESEL FROM InfoKonto WHERE NumerKonta = " + BigInteger.Parse(textBoxNumerKonta.Text) + "", con);
+                                        SqlDataReader queryResult = query.ExecuteReader();
+                                        DataTable dt = new DataTable();
+                                        dt.Load(queryResult);
+                                        DataRow dw = dt.Rows[0];
+                                        pesel1 = dw[0].ToString();
+
+                                        if (pesel1 == StalyLogowanie.pesel)
+                                        {
+                                            MessageBox.Show("Przelew można wykonać na inny numer konta niż posiadasz. Zmień numer konta", "Błąd numer konta", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                        }
+                                        else
+                                        {
+                                            SqlDataAdapter sdb = new SqlDataAdapter("SELECT Count(*) From InfoKlienci Where PESEL = '" + pesel1 + "' AND Imię = '" + textBoxImie.Text + "' AND Nazwisko = '" + textBoxNazwisko.Text + "'", con);
+                                            DataTable db = new DataTable();
+                                            sdb.Fill(db);
+                                            if (db.Rows[0][0].ToString() == "1")
+                                            {
+                                                SqlDataAdapter sdc = new SqlDataAdapter("SELECT Count(*) From InfoKonto Where PESEL = '" + StalyLogowanie.pesel + "' AND RodzajKonta = '" + comboBoxRodzajKonta.Text + "'", con);
+                                                DataTable dc = new DataTable();
+                                                sdc.Fill(dc);
+                                                if (dc.Rows[0][0].ToString() == "1")
+                                                {
+                                                    double kwota;
+                                                    SqlCommand query1 = new SqlCommand("SELECT StanKonta FROM InfoKonto WHERE PESEL = '" + StalyLogowanie.pesel + "'", con);
+                                                    SqlDataReader queryResult1 = query1.ExecuteReader();
+                                                    DataTable dp = new DataTable();
+                                                    dp.Load(queryResult1);
+                                                    DataRow dz = dp.Rows[0];
+                                                    kwota = System.Double.Parse(dz[0].ToString());
+
+                                                    Random zmienna1 = new Random();
+                                                    double w = zmienna1.Next(100000000, 999999999);
+                                                    double z = zmienna1.Next(100000000, 999999999);
+
+                                                    if (kwota < System.Double.Parse(textBoxKwota.Text))
+                                                    {
+                                                        MessageBox.Show("Kwota przelewu jest większa niż dostępne środki na koncie. Zmień kwotę przelewu", "Błąd kwota", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                                    }
+                                                    else
+                                                    {
+                                                        SqlDataAdapter sdf = new SqlDataAdapter("SELECT Count(*) From Konto" + pesel1 + " Where NumerTransakcji = " + w + "", con);
+                                                        DataTable df = new DataTable();
+                                                        sdf.Fill(df);
+                                                        if (df.Rows[0][0].ToString() == "1")
+                                                        {
+                                                            MessageBox.Show("Wylosowany numer transakcji istnieje w bazie danych. Spróbuj ponownie.", "Błąd numer transakcji", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                                        }
+                                                        else
+                                                        {
+                                                            SqlDataAdapter sdg = new SqlDataAdapter("SELECT Count(*) From Konto" + StalyLogowanie.pesel + " Where NumerTransakcji = " + z + "", con);
+                                                            DataTable dg = new DataTable();
+                                                            sdg.Fill(dg);
+                                                            if (dg.Rows[0][0].ToString() == "1")
+                                                            {
+                                                                MessageBox.Show("Wylosowany numer transakcji istnieje w bazie danych. Spróbuj ponownie.", "Błąd numer transakcji", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                                            }
+                                                            else
+                                                            {
+                                                                SqlCommand command = new SqlCommand("UPDATE InfoKonto SET StanKonta +=" + System.Decimal.Parse(textBoxKwota.Text) + " WHERE PESEL = '" + pesel1 + "'", con);
+                                                                command.ExecuteNonQuery();
+                                                                SqlCommand command1 = new SqlCommand("UPDATE InfoKonto SET StanKonta -=" + System.Decimal.Parse(textBoxKwota.Text) + " WHERE PESEL = '" + StalyLogowanie.pesel + "'", con);
+                                                                command1.ExecuteNonQuery();
+                                                                SqlCommand command3 = new SqlCommand("INSERT INTO Konto" + pesel1 + " VALUES(" + w + ",'" + DateTime.Today.ToString("yyyy-MM-dd") + "','Przelew przychodzący'," + System.Decimal.Parse(textBoxKwota.Text) + ")", con);
+                                                                command3.ExecuteNonQuery();
+                                                                SqlCommand command4 = new SqlCommand("INSERT INTO Konto" + StalyLogowanie.pesel + " VALUES(" + z + ",'" + DateTime.Today.ToString("yyyy-MM-dd") + "','Przelew wychodzący'," + System.Decimal.Parse(textBoxKwota.Text) + ")", con);
+                                                                command4.ExecuteNonQuery();
+
+                                                                MessageBox.Show("Przelew został wykonany.", "Przelew", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    MessageBox.Show("Podany rodzaj konta do danego numeru PESEL nie istnieje. Wybierz prawidłowy rodzaj konta jakie posiadasz.", "Błąd rodzaj konta", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                                }
+                                            }
+                                            else
+                                            {
+                                                MessageBox.Show("Podane imię i nazwisko jest błędne dla podanego numeru konta. Zmień podane dane.", "Błąd dane", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        SqlDataAdapter sdr = new SqlDataAdapter("SELECT Count(*) From InfoKonto Where PESEL = '" + StalyLogowanie.pesel + "' AND RodzajKonta = '" + comboBoxRodzajKonta.Text + "'", con);
+                                        DataTable dr = new DataTable();
+                                        sdr.Fill(dr);
+                                        if (dr.Rows[0][0].ToString() == "1")
+                                        {
+                                            double kwota1;
+                                            SqlCommand query2 = new SqlCommand("SELECT StanKonta FROM InfoKonto WHERE PESEL = '" + StalyLogowanie.pesel + "'", con);
+                                            SqlDataReader queryResult2 = query2.ExecuteReader();
+                                            DataTable di = new DataTable();
+                                            di.Load(queryResult2);
+                                            DataRow dw = di.Rows[0];
+                                            kwota1 = System.Double.Parse(dw[0].ToString());
+
+                                            Random zmienna1 = new Random();
+                                            double w = zmienna1.Next(100000000, 999999999);
+
+                                            if (kwota1 < System.Double.Parse(textBoxKwota.Text))
+                                            {
+                                                MessageBox.Show("Kwota przelewu jest większa niż dostępne środki na koncie. Zmień kwotę przelewu", "Błąd kwota", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                            }
+                                            else
+                                            {
+                                                SqlDataAdapter sdg = new SqlDataAdapter("SELECT Count(*) From Konto" + StalyLogowanie.pesel + " Where NumerTransakcji = " + w + "", con);
+                                                DataTable dg = new DataTable();
+                                                sdg.Fill(dg);
+                                                if (dg.Rows[0][0].ToString() == "1")
+                                                {
+                                                    MessageBox.Show("Wylosowany numer transakcji istnieje w bazie danych. Spróbuj ponownie.", "Błąd numer transakcji", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                                }
+                                                else
+                                                {
+                                                    SqlCommand command = new SqlCommand("UPDATE InfoKonto SET StanKonta -=" + System.Decimal.Parse(textBoxKwota.Text) + " WHERE PESEL = '" + StalyLogowanie.pesel + "'", con);
+                                                    command.ExecuteNonQuery();
+                                                    SqlCommand command1 = new SqlCommand("INSERT INTO Konto" + StalyLogowanie.pesel + " VALUES(" + w + ",'" + DateTime.Today.ToString("yyyy-MM-dd") + "','Przelew wychodzący'," + System.Decimal.Parse(textBoxKwota.Text) + ")", con);
+                                                    command1.ExecuteNonQuery();
+
+                                                    MessageBox.Show("Przelew został wykonany.", "Przelew", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                                }
+                                            }
+                                        }
+                                        else
+                                        {
+                                            MessageBox.Show("Podany rodzaj konta do danego numeru PESEL nie istnieje. Wybierz prawidłowy rodzaj konta jakie posiadasz.", "Błąd rodzaj konta", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                        }
+
+                                    }
+                                    con.Close();
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        MessageBox.Show("Źle wprowadzony numer konta. Numer konta powinnien mieć 26 cyfr.", "Błąd numer konta", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
+                }
+            }
+        }
+
+        private void textBoxImie_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Alt || e.KeyCode == Keys.Tab || e.KeyCode == Keys.CapsLock || e.KeyCode == Keys.LShiftKey || e.KeyCode == Keys.RShiftKey || e.KeyCode == Keys.Shift || e.KeyCode == Keys.ShiftKey || e.KeyCode == Keys.Back || e.KeyCode == Keys.Q || e.KeyCode == Keys.W || e.KeyCode == Keys.E || e.KeyCode == Keys.R || e.KeyCode == Keys.T || e.KeyCode == Keys.Y || e.KeyCode == Keys.U || e.KeyCode == Keys.I || e.KeyCode == Keys.O || e.KeyCode == Keys.P || e.KeyCode == Keys.A || e.KeyCode == Keys.S || e.KeyCode == Keys.D || e.KeyCode == Keys.F || e.KeyCode == Keys.G || e.KeyCode == Keys.H || e.KeyCode == Keys.J || e.KeyCode == Keys.K || e.KeyCode == Keys.L || e.KeyCode == Keys.Z || e.KeyCode == Keys.X || e.KeyCode == Keys.C || e.KeyCode == Keys.V || e.KeyCode == Keys.B || e.KeyCode == Keys.N || e.KeyCode == Keys.M)
+            {
+                e.Handled = true;
+            }
+            else
+            {
+                textBoxImie.Clear();
+                MessageBox.Show("Źle wprowadzone. Imię składa się tylko z liter.", "Błąd imię", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        private void textBoxNazwisko_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Alt || e.KeyCode == Keys.Tab || e.KeyCode == Keys.CapsLock || e.KeyCode == Keys.LShiftKey || e.KeyCode == Keys.RShiftKey || e.KeyCode == Keys.Shift || e.KeyCode == Keys.ShiftKey || e.KeyCode == Keys.Back || e.KeyCode == Keys.Q || e.KeyCode == Keys.W || e.KeyCode == Keys.E || e.KeyCode == Keys.R || e.KeyCode == Keys.T || e.KeyCode == Keys.Y || e.KeyCode == Keys.U || e.KeyCode == Keys.I || e.KeyCode == Keys.O || e.KeyCode == Keys.P || e.KeyCode == Keys.A || e.KeyCode == Keys.S || e.KeyCode == Keys.D || e.KeyCode == Keys.F || e.KeyCode == Keys.G || e.KeyCode == Keys.H || e.KeyCode == Keys.J || e.KeyCode == Keys.K || e.KeyCode == Keys.L || e.KeyCode == Keys.Z || e.KeyCode == Keys.X || e.KeyCode == Keys.C || e.KeyCode == Keys.V || e.KeyCode == Keys.B || e.KeyCode == Keys.N || e.KeyCode == Keys.M)
+            {
+                e.Handled = true;
+            }
+            else
+            {
+                textBoxNazwisko.Clear();
+                MessageBox.Show("Źle wprowadzone. Nazwisko składa się tylko z liter.", "Błąd nazwisko", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+    }
+}
