@@ -1,0 +1,69 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Drawing;
+using System.Data;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Data.SqlClient;
+
+namespace BankPraca
+{
+    public partial class ZamkniecieKonta : UserControl
+    {
+        public ZamkniecieKonta()
+        {
+            InitializeComponent();
+        }
+
+        private void comboBoxRodzajKonta_KeyUp(object sender, KeyEventArgs e)
+        {
+            comboBoxRodzajKonta.SelectedItem = "Wybierz";
+            MessageBox.Show("Źle wprowadzone. Wybierz z listy", "Błąd rodzaj konta", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+
+        private void buttonZamknij_Click(object sender, EventArgs e)
+        {
+            if(comboBoxRodzajKonta.Text == "Wybierz") 
+            {
+                MessageBox.Show("Rodzaj konta nie został wybrany.", "Błąd rodzaj konta", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+            else 
+            {
+                SqlConnection con = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\Monika\Desktop\BankPraca\BazaBank.mdf;Integrated Security=True;Connect Timeout=30");
+                con.Open();
+                SqlDataAdapter sda = new SqlDataAdapter("SELECT Count(*) From InfoKonto Where PESEL = " + StalyLogowanie.pesel + " AND RodzajKonta = '" + comboBoxRodzajKonta.Text + "'", con);
+                DataTable da = new DataTable();
+                sda.Fill(da);
+                if (da.Rows[0][0].ToString() == "1")
+                {
+                    SqlCommand command = new SqlCommand("UPDATE Logowanie SET Konto = 'NIE' WHERE PESEL = " + StalyLogowanie.pesel + "", con);
+                    command.ExecuteNonQuery();
+                    SqlCommand command1 = new SqlCommand("DELETE FROM InfoKonto WHERE PESEL = " + StalyLogowanie.pesel + "", con);
+                    command1.ExecuteNonQuery();
+                    SqlCommand command2 = new SqlCommand("DROP TABLE Konto" + StalyLogowanie.pesel + "", con);
+                    command2.ExecuteNonQuery();
+
+                    SqlDataAdapter sdb = new SqlDataAdapter("SELECT Count(*) From Logowanie Where PESEL = " + StalyLogowanie.pesel + " AND Konto = 'NIE' AND Kredyt = 'NIE' AND Pożyczka = 'NIE' AND Lokata = 'NIE'", con);
+                    DataTable db = new DataTable();
+                    sdb.Fill(db);
+                    if (db.Rows[0][0].ToString() == "1")
+                    {
+                        SqlCommand command3 = new SqlCommand("DELETE FROM Logowanie WHERE PESEL = " + StalyLogowanie.pesel + "", con);
+                        command3.ExecuteNonQuery();
+                        SqlCommand command4 = new SqlCommand("DELETE FROM InfoKlienci WHERE PESEL = " + StalyLogowanie.pesel + "", con);
+                        command4.ExecuteNonQuery();
+                    }
+
+                    MessageBox.Show("Twoje konto zostało zamknięte.", "Zamknięcie konta", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else 
+                {
+                    MessageBox.Show("Podany rodzaj konta do danego numeru PESEL nie istnieje. Wybierz prawidłowy rodzaj konta jakie posiadasz.", "Błąd rodzaj konta", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+            }
+        }
+    }
+}
