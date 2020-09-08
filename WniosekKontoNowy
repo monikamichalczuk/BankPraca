@@ -1,0 +1,319 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Drawing;
+using System.Data;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Data.SqlClient;
+using System.Security.Cryptography;
+
+namespace BankPraca.Wnioski
+{
+    public partial class WniosekKontoNowy : UserControl
+    {
+        string rok;
+        string miesiac;
+        string dzien;
+        string haslo;
+
+        public WniosekKontoNowy()
+        {
+            InitializeComponent();
+        }
+
+        static string GetMd5Hash(MD5 md5Hash, string input)
+        {
+
+            // Convert the input string to a byte array and compute the hash.
+            byte[] data = md5Hash.ComputeHash(Encoding.UTF8.GetBytes(input));
+
+            // Create a new Stringbuilder to collect the bytes
+            // and create a string.
+            StringBuilder sBuilder = new StringBuilder();
+
+            // Loop through each byte of the hashed data 
+            // and format each one as a hexadecimal string.
+            for (int i = 0; i < data.Length; i++)
+            {
+                sBuilder.Append(data[i].ToString("x2"));
+            }
+
+            // Return the hexadecimal string.
+            return sBuilder.ToString();
+        }
+
+        private void textBoxPesel_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Tab || e.KeyCode == Keys.D0 || e.KeyCode == Keys.D1 || e.KeyCode == Keys.D2 || e.KeyCode == Keys.D3 || e.KeyCode == Keys.D4 || e.KeyCode == Keys.D5 || e.KeyCode == Keys.D6 || e.KeyCode == Keys.D7 || e.KeyCode == Keys.D8 || e.KeyCode == Keys.D9 || e.KeyCode == Keys.NumPad0 || e.KeyCode == Keys.NumPad1 || e.KeyCode == Keys.NumPad2 || e.KeyCode == Keys.NumPad3 || e.KeyCode == Keys.NumPad4 || e.KeyCode == Keys.NumPad5 || e.KeyCode == Keys.NumPad6 || e.KeyCode == Keys.NumPad7 || e.KeyCode == Keys.NumPad8 || e.KeyCode == Keys.NumPad9 || e.KeyCode == Keys.Back)
+            {
+                e.Handled = true;
+            }
+            else
+            {
+                textBoxPesel.Clear();
+                MessageBox.Show("Źle wprowadzone. Podaj ciąg cyfr.", "Błąd PESEL", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        private void comboBoxRodzajKonta_KeyUp(object sender, KeyEventArgs e)
+        {
+            comboBoxRodzajKonta.SelectedItem = "Wybierz";
+            MessageBox.Show("Źle wprowadzone. Wybierz z listy", "Błąd rodzaj konta", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+
+        private void buttonZamknij_Click(object sender, EventArgs e)
+        {
+            this.Hide();
+            this.Visible = false;
+            this.SendToBack();
+        }
+
+        private void buttonWnioskuj_Click(object sender, EventArgs e)
+        {
+            if (textBoxImie.Text.Length < 3 || textBoxImie.Text.Length > 20)
+            {
+                MessageBox.Show("Źle zostało podane imię. Jest zbyt krótkie albo za długie. Imię powinno składać się od 3 do 20 znaków.", "Błąd imię", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+            else
+            {
+                if (textBoxNazwisko.Text.Length < 3 || textBoxNazwisko.Text.Length > 50)
+                {
+                    MessageBox.Show("Źle zostało podane nazwisko. Jest zbyt krótkie albo za długie. Nazwisko powinno składać się od 3 do 50-ciu znaków.", "Błąd nazwisko", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+                else
+                {
+                    long r = long.Parse(dateTimePickerDataUrodzenia.Value.ToString("yyyy"));
+                    long n = long.Parse(DateTime.Today.ToString("yyyy"));
+
+                    long g = n - r;
+
+                    if (g < 18)
+                    {
+                        MessageBox.Show("Wiek osoby ubiegającej się o konto nie może być mniejszy niż 18 lat. Licząc same lata.", "Błąd wiek.", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
+                    else
+                    {
+                        if (textBoxPesel.Text.Length == 11)
+                        {
+                            rok = textBoxPesel.Text.Substring(0, 2);
+                            miesiac = textBoxPesel.Text.Substring(2, 2);
+                            dzien = textBoxPesel.Text.Substring(4, 2);
+
+                            if (rok == dateTimePickerDataUrodzenia.Value.ToString("yy") && miesiac == dateTimePickerDataUrodzenia.Value.ToString("MM") && dzien == dateTimePickerDataUrodzenia.Value.ToString("dd"))
+                            {
+                                if (textBoxNumerDowodu.Text.Length == 9)
+                                {
+                                    if (comboBoxRodzajKonta.Text == "Wybierz")
+                                    {
+                                        MessageBox.Show("Rodzaj konta nie został wybrany. Wybierz z listy.", "Błąd rodzaj konta", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                    }
+                                    else
+                                    {
+                                        if (textBoxHaslo.Text.Length < 5 || textBoxHaslo.Text.Length > 50)
+                                        {
+                                            MessageBox.Show("Hasło musi składać się od 5-ciu do 50-ciu znaków.", "Błąd hasła", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                        }
+                                        else
+                                        {
+                                            if (g > 26 && comboBoxRodzajKonta.Text == "Konto student")
+                                            {
+                                                MessageBox.Show("Wybrane konto jest dla osób w wieku od 18 do 26 lat.", "Błąd konto", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                            }
+                                            else
+                                            {
+                                                SqlConnection con = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\Monika\Desktop\BankPraca\BazaBank.mdf;Integrated Security=True;Connect Timeout=30");
+                                                con.Open();
+                                                SqlDataAdapter sda = new SqlDataAdapter("SELECT Count(*) From Logowanie Where PESEL = '" + this.textBoxPesel.Text + "'", con);
+                                                DataTable da = new DataTable();
+                                                sda.Fill(da);
+                                                if (da.Rows[0][0].ToString() == "1")
+                                                {
+                                                    SqlCommand query = new SqlCommand("SELECT Hasło FROM Logowanie WHERE PESEL = '" + this.textBoxPesel.Text + "'", con);
+                                                    SqlDataReader queryResult = query.ExecuteReader();
+                                                    DataTable dx = new DataTable();
+                                                    dx.Load(queryResult);
+                                                    DataRow dz = dx.Rows[0];
+                                                    haslo = dz[0].ToString();
+
+                                                    MD5 kod = MD5.Create();
+
+                                                    string hash = GetMd5Hash(kod, textBoxHaslo.Text);
+
+                                                    if (String.Compare(haslo, hash) == 0)
+                                                    {
+                                                        SqlDataAdapter sdy = new SqlDataAdapter("SELECT Count(*) From InfoKlienci Where PESEL = '" + this.textBoxPesel.Text + "' AND Imię = '" + textBoxImie.Text + "' AND Nazwisko = '" + textBoxNazwisko.Text + "' AND DataUrodzenia = '" + dateTimePickerDataUrodzenia.Value.ToString("yyyy-MM-dd") + "' AND NumerDowodu = '" + textBoxNumerDowodu.Text + "'", con);
+                                                        DataTable dy = new DataTable();
+                                                        sdy.Fill(dy);
+                                                        if (dy.Rows[0][0].ToString() == "1")
+                                                        {
+                                                            SqlDataAdapter sdc = new SqlDataAdapter("SELECT Count(*) From Logowanie Where PESEL = '" + this.textBoxPesel.Text + "' AND Konto = 'TAK'", con);
+                                                            DataTable dc = new DataTable();
+                                                            sdc.Fill(dc);
+                                                            if (dc.Rows[0][0].ToString() == "1")
+                                                            {
+                                                                MessageBox.Show("Do podanego numeru PESEL istnieje już konto. Można mieć tylko jedno konto.", "Błąd konto", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                                            }
+                                                            else
+                                                            {
+                                                                Random zmienna = new Random();
+                                                                double a = zmienna.Next(100000000, 999999999);
+                                                                double b = zmienna.Next(100000000, 999999999);
+                                                                double c = zmienna.Next(10000000, 99999999);
+
+                                                                SqlDataAdapter sdd = new SqlDataAdapter("SELECT Count(*) From InfoKonto Where NumerKonta = " + a + b + c + "", con);
+                                                                DataTable dd = new DataTable();
+                                                                sdd.Fill(dd);
+                                                                if (dd.Rows[0][0].ToString() == "1")
+                                                                {
+                                                                    MessageBox.Show("Wylosowany numer konta istnieje w bazie danych. Spróbuj ponownie.", "Błąd numer konta", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                                                }
+                                                                else
+                                                                {
+                                                                    SqlCommand command = new SqlCommand("UPDATE Logowanie SET Konto = 'TAK' WHERE PESEL = '" + this.textBoxPesel.Text + "'", con);
+                                                                    command.ExecuteNonQuery();
+                                                                    SqlCommand command1 = new SqlCommand("CREATE TABLE Konto" + textBoxPesel.Text + "(NumerTransakcji BIGINT NOT NULL, DataTransakcji DATE NOT NULL, RodzajTransakcji VARCHAR(50) NOT NULL, Kwota DECIMAL(18,2) NOT NULL, CONSTRAINT PK_NumerTransakcjiK" + textBoxPesel.Text + " PRIMARY KEY CLUSTERED(NumerTransakcji));", con);
+                                                                    command1.ExecuteNonQuery();
+
+                                                                    SqlCommand command2 = new SqlCommand("INSERT INTO InfoKonto VALUES('" + a + b + c + "','" + this.textBoxPesel.Text + "','" + this.comboBoxRodzajKonta.Text + "',0)", con);
+                                                                    command2.ExecuteNonQuery();
+                                                                    MessageBox.Show("Podany numer PESEL istnieje już w bazie danych. Dane zostały zaktualizowane. Twoje konto zostało otwarte.", "Otwarcie Konta", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                                                }
+                                                            }
+                                                        }
+                                                        else
+                                                        {
+                                                            MessageBox.Show("Podany numer PESEL istnieje w bazie danych. Podane dane nie zgadzają się. Podaj takie same dane jak przy pierwszym wniosku.", "Błąd dane", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        MessageBox.Show("Podany numer PESEL istnieje w bazie danych. Źle zostało podane hasło. Podaj hasło, takie jak wcześniej podałeś przy pierwszym swoim wniosku.", "Błąd hasło", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    Random zmienna = new Random();
+                                                    double a = zmienna.Next(100000000, 999999999);
+                                                    double b = zmienna.Next(100000000, 999999999);
+                                                    double c = zmienna.Next(10000000, 99999999);
+
+                                                    double d = zmienna.Next(100000000, 999999999);
+                                                    double f = zmienna.Next(100000000, 999999999);
+                                                    double h = zmienna.Next(10, 99);
+
+                                                    SqlDataAdapter sdd = new SqlDataAdapter("SELECT Count(*) From InfoKlienci Where IdKlienta = " + d + f + h + "", con);
+                                                    DataTable dd = new DataTable();
+                                                    sdd.Fill(dd);
+                                                    if (dd.Rows[0][0].ToString() == "1")
+                                                    {
+                                                        MessageBox.Show("Wylosowane Id klienta istnieje w bazie danych. Spróbuj ponownie.", "Błąd Id klienta", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                                    }
+                                                    else
+                                                    {
+                                                        SqlDataAdapter sde = new SqlDataAdapter("SELECT Count(*) From InfoKonto Where NumerKonta = " + a + b + c + "", con);
+                                                        DataTable de = new DataTable();
+                                                        sde.Fill(de);
+                                                        if (de.Rows[0][0].ToString() == "1")
+                                                        {
+                                                            MessageBox.Show("Wylosowany numer konta istnieje w bazie danych. Spróbuj ponownie.", "Błąd numer konta", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                                        }
+                                                        else
+                                                        {
+                                                            MD5 kod = MD5.Create();
+
+                                                            string hash = GetMd5Hash(kod, textBoxHaslo.Text);
+
+                                                            SqlCommand command = new SqlCommand("INSERT INTO Logowanie VALUES('" + this.textBoxPesel.Text + "','" + hash + "','TAK','NIE','NIE','NIE')", con);
+                                                            command.ExecuteNonQuery();
+                                                            SqlCommand command1 = new SqlCommand("CREATE TABLE Konto" + textBoxPesel.Text + "(NumerTransakcji BIGINT NOT NULL, DataTransakcji DATE NOT NULL, RodzajTransakcji VARCHAR(50) NOT NULL, Kwota DECIMAL(18,2) NOT NULL, CONSTRAINT PK_NumerTransakcjiK" + textBoxPesel.Text + " PRIMARY KEY CLUSTERED(NumerTransakcji));", con);
+                                                            command1.ExecuteNonQuery();
+                                                            SqlCommand command3 = new SqlCommand("INSERT INTO InfoKlienci VALUES(" + d + f + h +",'" + this.textBoxPesel.Text + "','" + this.textBoxImie.Text + "', '" + textBoxNazwisko.Text + "', '" + dateTimePickerDataUrodzenia.Value.ToString("yyyy-MM-dd") + "','" + textBoxNumerDowodu.Text + "')", con);
+                                                            command3.ExecuteNonQuery();
+
+                                                            SqlCommand command2 = new SqlCommand("INSERT INTO InfoKonto VALUES('" + a + b + c + "','" + this.textBoxPesel.Text + "','" + this.comboBoxRodzajKonta.Text + "',0)", con);
+                                                            command2.ExecuteNonQuery();
+                                                            MessageBox.Show("Podany numer PESEL nie istnieje w bazie danych. Numer PESEL został dodany do bazy danych. Twoje konto zostało otwarte.", "Otwarcie Konta", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                                        }
+                                                    }
+                                                }
+                                                con.Close();
+                                            }
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    MessageBox.Show("Źle został podany numer dowodu osobistego. Numer dowodu powinien składać się z 9-ciu znaków.", "Błąd numer dowodu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                }
+                            }
+                            else 
+                            {
+                                MessageBox.Show("Wybrana data urodzenia i podany numer PESEL nie zgadzają się. Popraw te dane.", "Błąd numer PESEL", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            }
+                        }
+                        else
+                        {
+                            MessageBox.Show("Źle został podany numer PESEL. Numer PESEL musi mieć 11 cyfr.", "Błąd numer PESEL", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        }
+
+                    }
+                }
+            }
+        }
+
+        private void textBoxHaslo_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Alt || e.KeyCode == Keys.Tab || e.KeyCode == Keys.CapsLock || e.KeyCode == Keys.LShiftKey || e.KeyCode == Keys.RShiftKey || e.KeyCode == Keys.Shift || e.KeyCode == Keys.ShiftKey || e.KeyCode == Keys.D0 || e.KeyCode == Keys.D1 || e.KeyCode == Keys.D2 || e.KeyCode == Keys.D3 || e.KeyCode == Keys.D4 || e.KeyCode == Keys.D5 || e.KeyCode == Keys.D6 || e.KeyCode == Keys.D7 || e.KeyCode == Keys.D8 || e.KeyCode == Keys.D9 || e.KeyCode == Keys.NumPad0 || e.KeyCode == Keys.NumPad1 || e.KeyCode == Keys.NumPad2 || e.KeyCode == Keys.NumPad3 || e.KeyCode == Keys.NumPad4 || e.KeyCode == Keys.NumPad5 || e.KeyCode == Keys.NumPad6 || e.KeyCode == Keys.NumPad7 || e.KeyCode == Keys.NumPad8 || e.KeyCode == Keys.NumPad9 || e.KeyCode == Keys.Back || e.KeyCode == Keys.Q || e.KeyCode == Keys.W || e.KeyCode == Keys.E || e.KeyCode == Keys.R || e.KeyCode == Keys.T || e.KeyCode == Keys.Y || e.KeyCode == Keys.U || e.KeyCode == Keys.I || e.KeyCode == Keys.O || e.KeyCode == Keys.P || e.KeyCode == Keys.A || e.KeyCode == Keys.S || e.KeyCode == Keys.D || e.KeyCode == Keys.F || e.KeyCode == Keys.G || e.KeyCode == Keys.H || e.KeyCode == Keys.J || e.KeyCode == Keys.K || e.KeyCode == Keys.L || e.KeyCode == Keys.Z || e.KeyCode == Keys.X || e.KeyCode == Keys.C || e.KeyCode == Keys.V || e.KeyCode == Keys.B || e.KeyCode == Keys.N || e.KeyCode == Keys.M)
+            {
+                e.Handled = true;
+            }
+            else
+            {
+                textBoxHaslo.Clear();
+                MessageBox.Show("Źle wprowadzone. Hasło składa się tylko z liter i cyfr.", "Błąd hasło", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        private void textBoxImie_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Alt || e.KeyCode == Keys.Tab || e.KeyCode == Keys.CapsLock || e.KeyCode == Keys.LShiftKey || e.KeyCode == Keys.RShiftKey || e.KeyCode == Keys.Shift || e.KeyCode == Keys.ShiftKey || e.KeyCode == Keys.Back || e.KeyCode == Keys.Q || e.KeyCode == Keys.W || e.KeyCode == Keys.E || e.KeyCode == Keys.R || e.KeyCode == Keys.T || e.KeyCode == Keys.Y || e.KeyCode == Keys.U || e.KeyCode == Keys.I || e.KeyCode == Keys.O || e.KeyCode == Keys.P || e.KeyCode == Keys.A || e.KeyCode == Keys.S || e.KeyCode == Keys.D || e.KeyCode == Keys.F || e.KeyCode == Keys.G || e.KeyCode == Keys.H || e.KeyCode == Keys.J || e.KeyCode == Keys.K || e.KeyCode == Keys.L || e.KeyCode == Keys.Z || e.KeyCode == Keys.X || e.KeyCode == Keys.C || e.KeyCode == Keys.V || e.KeyCode == Keys.B || e.KeyCode == Keys.N || e.KeyCode == Keys.M)
+            {
+                e.Handled = true;
+            }
+            else
+            {
+                textBoxImie.Clear();
+                MessageBox.Show("Źle wprowadzone. Imie składa się tylko z liter.", "Błąd imię", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        private void textBoxNazwisko_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Alt || e.KeyCode == Keys.Tab || e.KeyCode == Keys.CapsLock || e.KeyCode == Keys.LShiftKey || e.KeyCode == Keys.RShiftKey || e.KeyCode == Keys.Shift || e.KeyCode == Keys.ShiftKey || e.KeyCode == Keys.Back || e.KeyCode == Keys.Q || e.KeyCode == Keys.W || e.KeyCode == Keys.E || e.KeyCode == Keys.R || e.KeyCode == Keys.T || e.KeyCode == Keys.Y || e.KeyCode == Keys.U || e.KeyCode == Keys.I || e.KeyCode == Keys.O || e.KeyCode == Keys.P || e.KeyCode == Keys.A || e.KeyCode == Keys.S || e.KeyCode == Keys.D || e.KeyCode == Keys.F || e.KeyCode == Keys.G || e.KeyCode == Keys.H || e.KeyCode == Keys.J || e.KeyCode == Keys.K || e.KeyCode == Keys.L || e.KeyCode == Keys.Z || e.KeyCode == Keys.X || e.KeyCode == Keys.C || e.KeyCode == Keys.V || e.KeyCode == Keys.B || e.KeyCode == Keys.N || e.KeyCode == Keys.M)
+            {
+                e.Handled = true;
+            }
+            else
+            {
+                textBoxNazwisko.Clear();
+                MessageBox.Show("Źle wprowadzone. Nazwisko składa się tylko z liter.", "Błąd nazwisko", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        private void textBoxNumerDowodu_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Tab || e.KeyCode == Keys.CapsLock || e.KeyCode == Keys.LShiftKey || e.KeyCode == Keys.RShiftKey || e.KeyCode == Keys.Shift || e.KeyCode == Keys.ShiftKey || e.KeyCode == Keys.D0 || e.KeyCode == Keys.D1 || e.KeyCode == Keys.D2 || e.KeyCode == Keys.D3 || e.KeyCode == Keys.D4 || e.KeyCode == Keys.D5 || e.KeyCode == Keys.D6 || e.KeyCode == Keys.D7 || e.KeyCode == Keys.D8 || e.KeyCode == Keys.D9 || e.KeyCode == Keys.NumPad0 || e.KeyCode == Keys.NumPad1 || e.KeyCode == Keys.NumPad2 || e.KeyCode == Keys.NumPad3 || e.KeyCode == Keys.NumPad4 || e.KeyCode == Keys.NumPad5 || e.KeyCode == Keys.NumPad6 || e.KeyCode == Keys.NumPad7 || e.KeyCode == Keys.NumPad8 || e.KeyCode == Keys.NumPad9 || e.KeyCode == Keys.Back || e.KeyCode == Keys.Q || e.KeyCode == Keys.W || e.KeyCode == Keys.E || e.KeyCode == Keys.R || e.KeyCode == Keys.T || e.KeyCode == Keys.Y || e.KeyCode == Keys.U || e.KeyCode == Keys.I || e.KeyCode == Keys.O || e.KeyCode == Keys.P || e.KeyCode == Keys.A || e.KeyCode == Keys.S || e.KeyCode == Keys.D || e.KeyCode == Keys.F || e.KeyCode == Keys.G || e.KeyCode == Keys.H || e.KeyCode == Keys.J || e.KeyCode == Keys.K || e.KeyCode == Keys.L || e.KeyCode == Keys.Z || e.KeyCode == Keys.X || e.KeyCode == Keys.C || e.KeyCode == Keys.V || e.KeyCode == Keys.B || e.KeyCode == Keys.N || e.KeyCode == Keys.M)
+            {
+                e.Handled = true;
+            }
+            else
+            {
+                textBoxNumerDowodu.Clear();
+                MessageBox.Show("Źle wprowadzone. Numer dowodu składa się tylko z liter i cyfr.", "Błąd numer dowodu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+    }
+}
