@@ -1,0 +1,504 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Drawing;
+using System.Data;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Data.SqlClient;
+
+namespace BankPraca
+{
+    public partial class KontrolaWydatkowKonto : UserControl
+    {
+        public KontrolaWydatkowKonto()
+        {
+            InitializeComponent();
+        }
+
+        private void comboBoxRodzajKonta_KeyUp(object sender, KeyEventArgs e)
+        {
+            comboBoxRodzajKonta.SelectedItem = "Wybierz";
+            MessageBox.Show("Źle wprowadzone. Wybierz z listy", "Błąd rodzaj konta", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+
+        private void buttonSzukaj_Click(object sender, EventArgs e)
+        {
+            double wyplata=0;
+            double wplata=0;
+            double przelewprzychodzacy=0;
+            double przelewwychodzacy=0;
+            chart1.Series.Clear();
+            chart1.Series.Add("s1");
+            chart1.Series["s1"].ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Doughnut;
+            chart1.Series["s1"].Font = new System.Drawing.Font("Century Gothic", 10.2F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(238)));
+            chart1.Legends["Legend1"].Font = new System.Drawing.Font("Century Gothic", 10.2F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(238)));
+            chart1.Series["s1"].IsValueShownAsLabel = true;
+            chart1.Series["s1"].LabelFormat = "c";
+
+            if (comboBoxRodzajKonta.Text == "Wybierz")
+            {
+                MessageBox.Show("Rodzaj konta nie został wybrany. Wybierz z listy.", "Błąd rodzaj konta.", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+            else
+            {
+                DateTime dataod = dateTimePickerDataOd.Value;
+                DateTime datado = dateTimePickerDataDo.Value;
+
+                if (dataod > datado)
+                {
+                    MessageBox.Show("Data od i do zostały źle podane. Data od musi być mniejsza niż data do.", "Błąd data", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+                else
+                {
+                    SqlConnection con = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\Monika\Desktop\BankPraca\BazaBank.mdf;Integrated Security=True;Connect Timeout=30");
+                    con.Open();
+                    SqlDataAdapter sda = new SqlDataAdapter("SELECT Count(*) From InfoKonto Where PESEL = '" + StalyLogowanie.pesel + "' AND RodzajKonta = '" + comboBoxRodzajKonta.Text + "'", con);
+                    DataTable da = new DataTable();
+                    sda.Fill(da);
+                    if (da.Rows[0][0].ToString() == "1")
+                    {
+                        SqlDataAdapter sdy = new SqlDataAdapter("SELECT Count(*) From Konto"+StalyLogowanie.pesel+" Where DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <= '" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'", con);
+                        DataTable dy = new DataTable();
+                        sdy.Fill(dy);
+                        if (System.Double.Parse(dy.Rows[0][0].ToString()) > 0)
+                        {
+                            SqlDataAdapter sdl = new SqlDataAdapter("SELECT Count(*) From Konto" + StalyLogowanie.pesel + " Where RodzajTransakcji = 'Wypłata' AND DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <= '" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'", con);
+                            DataTable dl = new DataTable();
+                            sdl.Fill(dl);
+                            if (System.Double.Parse(dl.Rows[0][0].ToString()) > 0)
+                            {
+                                SqlDataAdapter sdm = new SqlDataAdapter("SELECT Count(*) From Konto" + StalyLogowanie.pesel + " Where RodzajTransakcji = 'Wpłata' AND DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <= '" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'", con);
+                                DataTable dm = new DataTable();
+                                sdm.Fill(dm);
+                                if (System.Double.Parse(dm.Rows[0][0].ToString()) > 0)
+                                {
+                                    SqlDataAdapter sdn = new SqlDataAdapter("SELECT Count(*) From Konto" + StalyLogowanie.pesel + " Where RodzajTransakcji = 'Przelew przychodzący' AND DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <= '" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'", con);
+                                    DataTable dn = new DataTable();
+                                    sdn.Fill(dn);
+                                    if (System.Double.Parse(dn.Rows[0][0].ToString()) > 0)
+                                    {
+                                        SqlDataAdapter sdp = new SqlDataAdapter("SELECT Count(*) From Konto" + StalyLogowanie.pesel + " Where RodzajTransakcji = 'Przelew wychodzący' AND DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <= '" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'", con);
+                                        DataTable dp = new DataTable();
+                                        sdp.Fill(dp);
+                                        if (System.Double.Parse(dp.Rows[0][0].ToString()) > 0)
+                                        {
+                                            SqlCommand query1 = new SqlCommand("SELECT SUM(Kwota) FROM Konto" + StalyLogowanie.pesel + " WHERE RodzajTransakcji = 'Wypłata' AND DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <= '" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'", con);
+                                            SqlDataReader queryResult1 = query1.ExecuteReader();
+                                            DataTable dd = new DataTable();
+                                            dd.Load(queryResult1);
+                                            DataRow de = dd.Rows[0];
+                                            wyplata = System.Double.Parse(de[0].ToString());
+
+                                            SqlCommand query2 = new SqlCommand("SELECT SUM(Kwota) FROM Konto" + StalyLogowanie.pesel + " WHERE RodzajTransakcji = 'Wpłata' AND DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <= '" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'", con);
+                                            SqlDataReader queryResult2 = query2.ExecuteReader();
+                                            DataTable df = new DataTable();
+                                            df.Load(queryResult2);
+                                            DataRow dg = df.Rows[0];
+                                            wplata = System.Double.Parse(dg[0].ToString());
+
+                                            SqlCommand query3 = new SqlCommand("SELECT SUM(Kwota) FROM Konto" + StalyLogowanie.pesel + " WHERE RodzajTransakcji = 'Przelew przychodzący' AND DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <= '" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'", con);
+                                            SqlDataReader queryResult3 = query3.ExecuteReader();
+                                            DataTable dh = new DataTable();
+                                            dh.Load(queryResult3);
+                                            DataRow di = dh.Rows[0];
+                                            przelewprzychodzacy = System.Double.Parse(di[0].ToString());
+
+                                            SqlCommand query4 = new SqlCommand("SELECT SUM(Kwota) FROM Konto" + StalyLogowanie.pesel + " WHERE RodzajTransakcji = 'Przelew wychodzący' AND DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <= '" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'", con);
+                                            SqlDataReader queryResult4 = query4.ExecuteReader();
+                                            DataTable dj = new DataTable();
+                                            dj.Load(queryResult4);
+                                            DataRow dk = dj.Rows[0];
+                                            przelewwychodzacy = System.Double.Parse(dk[0].ToString());
+
+                                            chart1.Series["s1"].Points.AddXY("Wypłata", wyplata);
+                                            chart1.Series["s1"].Points.AddXY("Wpłata", wplata);
+                                            chart1.Series["s1"].Points.AddXY("Przelew przychodzący", przelewprzychodzacy);
+                                            chart1.Series["s1"].Points.AddXY("Przelew wychodzący", przelewwychodzacy);
+                                        }
+                                        else
+                                        {
+                                            przelewwychodzacy = 0;
+
+                                            SqlCommand query1 = new SqlCommand("SELECT SUM(Kwota) FROM Konto" + StalyLogowanie.pesel + " WHERE RodzajTransakcji = 'Wypłata' AND DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <= '" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'", con);
+                                            SqlDataReader queryResult1 = query1.ExecuteReader();
+                                            DataTable dd = new DataTable();
+                                            dd.Load(queryResult1);
+                                            DataRow de = dd.Rows[0];
+                                            wyplata = System.Double.Parse(de[0].ToString());
+
+                                            SqlCommand query2 = new SqlCommand("SELECT SUM(Kwota) FROM Konto" + StalyLogowanie.pesel + " WHERE RodzajTransakcji = 'Wpłata' AND DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <= '" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'", con);
+                                            SqlDataReader queryResult2 = query2.ExecuteReader();
+                                            DataTable df = new DataTable();
+                                            df.Load(queryResult2);
+                                            DataRow dg = df.Rows[0];
+                                            wplata = System.Double.Parse(dg[0].ToString());
+
+                                            SqlCommand query3 = new SqlCommand("SELECT SUM(Kwota) FROM Konto" + StalyLogowanie.pesel + " WHERE RodzajTransakcji = 'Przelew przychodzący' AND DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <= '" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'", con);
+                                            SqlDataReader queryResult3 = query3.ExecuteReader();
+                                            DataTable dh = new DataTable();
+                                            dh.Load(queryResult3);
+                                            DataRow di = dh.Rows[0];
+                                            przelewprzychodzacy = System.Double.Parse(di[0].ToString());
+
+                                            chart1.Series["s1"].Points.AddXY("Wypłata", wyplata);
+                                            chart1.Series["s1"].Points.AddXY("Wpłata", wplata);
+                                            chart1.Series["s1"].Points.AddXY("Przelew przychodzący", przelewprzychodzacy);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        przelewprzychodzacy = 0;
+
+                                        SqlDataAdapter sdp = new SqlDataAdapter("SELECT Count(*) From Konto" + StalyLogowanie.pesel + " Where RodzajTransakcji = 'Przelew wychodzący' AND DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <= '" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'", con);
+                                        DataTable dp = new DataTable();
+                                        sdp.Fill(dp);
+                                        if (System.Double.Parse(dp.Rows[0][0].ToString()) > 0)
+                                        {
+                                            SqlCommand query1 = new SqlCommand("SELECT SUM(Kwota) FROM Konto" + StalyLogowanie.pesel + " WHERE RodzajTransakcji = 'Wypłata' AND DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <= '" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'", con);
+                                            SqlDataReader queryResult1 = query1.ExecuteReader();
+                                            DataTable dd = new DataTable();
+                                            dd.Load(queryResult1);
+                                            DataRow de = dd.Rows[0];
+                                            wyplata = System.Double.Parse(de[0].ToString());
+
+                                            SqlCommand query2 = new SqlCommand("SELECT SUM(Kwota) FROM Konto" + StalyLogowanie.pesel + " WHERE RodzajTransakcji = 'Wpłata' AND DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <= '" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'", con);
+                                            SqlDataReader queryResult2 = query2.ExecuteReader();
+                                            DataTable df = new DataTable();
+                                            df.Load(queryResult2);
+                                            DataRow dg = df.Rows[0];
+                                            wplata = System.Double.Parse(dg[0].ToString());
+
+                                            SqlCommand query4 = new SqlCommand("SELECT SUM(Kwota) FROM Konto" + StalyLogowanie.pesel + " WHERE RodzajTransakcji = 'Przelew wychodzący' AND DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <= '" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'", con);
+                                            SqlDataReader queryResult4 = query4.ExecuteReader();
+                                            DataTable dj = new DataTable();
+                                            dj.Load(queryResult4);
+                                            DataRow dk = dj.Rows[0];
+                                            przelewwychodzacy = System.Double.Parse(dk[0].ToString());
+
+                                            chart1.Series["s1"].Points.AddXY("Wypłata", wyplata);
+                                            chart1.Series["s1"].Points.AddXY("Wpłata", wplata);
+                                            chart1.Series["s1"].Points.AddXY("Przelew wychodzący", przelewwychodzacy);
+                                        }
+                                        else
+                                        {
+                                            przelewwychodzacy = 0;
+
+                                            SqlCommand query1 = new SqlCommand("SELECT SUM(Kwota) FROM Konto" + StalyLogowanie.pesel + " WHERE RodzajTransakcji = 'Wypłata' AND DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <= '" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'", con);
+                                            SqlDataReader queryResult1 = query1.ExecuteReader();
+                                            DataTable dd = new DataTable();
+                                            dd.Load(queryResult1);
+                                            DataRow de = dd.Rows[0];
+                                            wyplata = System.Double.Parse(de[0].ToString());
+
+                                            SqlCommand query2 = new SqlCommand("SELECT SUM(Kwota) FROM Konto" + StalyLogowanie.pesel + " WHERE RodzajTransakcji = 'Wpłata' AND DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <= '" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'", con);
+                                            SqlDataReader queryResult2 = query2.ExecuteReader();
+                                            DataTable df = new DataTable();
+                                            df.Load(queryResult2);
+                                            DataRow dg = df.Rows[0];
+                                            wplata = System.Double.Parse(dg[0].ToString());
+
+                                            chart1.Series["s1"].Points.AddXY("Wypłata", wyplata);
+                                            chart1.Series["s1"].Points.AddXY("Wpłata", wplata);
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    wplata = 0;
+
+                                    SqlDataAdapter sdn = new SqlDataAdapter("SELECT Count(*) From Konto" + StalyLogowanie.pesel + " Where RodzajTransakcji = 'Przelew przychodzący' AND DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <= '" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'", con);
+                                    DataTable dn = new DataTable();
+                                    sdn.Fill(dn);
+                                    if (System.Double.Parse(dn.Rows[0][0].ToString()) > 0)
+                                    {
+                                        SqlDataAdapter sdp = new SqlDataAdapter("SELECT Count(*) From Konto" + StalyLogowanie.pesel + " Where RodzajTransakcji = 'Przelew wychodzący' AND DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <= '" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'", con);
+                                        DataTable dp = new DataTable();
+                                        sdp.Fill(dp);
+                                        if (System.Double.Parse(dp.Rows[0][0].ToString()) > 0)
+                                        {
+                                            SqlCommand query1 = new SqlCommand("SELECT SUM(Kwota) FROM Konto" + StalyLogowanie.pesel + " WHERE RodzajTransakcji = 'Wypłata' AND DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <= '" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'", con);
+                                            SqlDataReader queryResult1 = query1.ExecuteReader();
+                                            DataTable dd = new DataTable();
+                                            dd.Load(queryResult1);
+                                            DataRow de = dd.Rows[0];
+                                            wyplata = System.Double.Parse(de[0].ToString());
+
+                                            SqlCommand query3 = new SqlCommand("SELECT SUM(Kwota) FROM Konto" + StalyLogowanie.pesel + " WHERE RodzajTransakcji = 'Przelew przychodzący' AND DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <= '" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'", con);
+                                            SqlDataReader queryResult3 = query3.ExecuteReader();
+                                            DataTable dh = new DataTable();
+                                            dh.Load(queryResult3);
+                                            DataRow di = dh.Rows[0];
+                                            przelewprzychodzacy = System.Double.Parse(di[0].ToString());
+
+                                            SqlCommand query4 = new SqlCommand("SELECT SUM(Kwota) FROM Konto" + StalyLogowanie.pesel + " WHERE RodzajTransakcji = 'Przelew wychodzący' AND DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <= '" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'", con);
+                                            SqlDataReader queryResult4 = query4.ExecuteReader();
+                                            DataTable dj = new DataTable();
+                                            dj.Load(queryResult4);
+                                            DataRow dk = dj.Rows[0];
+                                            przelewwychodzacy = System.Double.Parse(dk[0].ToString());
+
+                                            chart1.Series["s1"].Points.AddXY("Wypłata", wyplata);
+                                            chart1.Series["s1"].Points.AddXY("Przelew przychodzący", przelewprzychodzacy);
+                                            chart1.Series["s1"].Points.AddXY("Przelew wychodzący", przelewwychodzacy);
+                                        }
+                                        else
+                                        {
+                                            przelewwychodzacy = 0;
+
+                                            SqlCommand query1 = new SqlCommand("SELECT SUM(Kwota) FROM Konto" + StalyLogowanie.pesel + " WHERE RodzajTransakcji = 'Wypłata' AND DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <= '" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'", con);
+                                            SqlDataReader queryResult1 = query1.ExecuteReader();
+                                            DataTable dd = new DataTable();
+                                            dd.Load(queryResult1);
+                                            DataRow de = dd.Rows[0];
+                                            wyplata = System.Double.Parse(de[0].ToString());
+
+                                            SqlCommand query3 = new SqlCommand("SELECT SUM(Kwota) FROM Konto" + StalyLogowanie.pesel + " WHERE RodzajTransakcji = 'Przelew przychodzący' AND DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <= '" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'", con);
+                                            SqlDataReader queryResult3 = query3.ExecuteReader();
+                                            DataTable dh = new DataTable();
+                                            dh.Load(queryResult3);
+                                            DataRow di = dh.Rows[0];
+                                            przelewprzychodzacy = System.Double.Parse(di[0].ToString());
+
+                                            chart1.Series["s1"].Points.AddXY("Wypłata", wyplata);
+                                            chart1.Series["s1"].Points.AddXY("Przelew przychodzący", przelewprzychodzacy);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        przelewprzychodzacy = 0;
+
+                                        SqlDataAdapter sdp = new SqlDataAdapter("SELECT Count(*) From Konto" + StalyLogowanie.pesel + " Where RodzajTransakcji = 'Przelew wychodzący' AND DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <= '" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'", con);
+                                        DataTable dp = new DataTable();
+                                        sdp.Fill(dp);
+                                        if (System.Double.Parse(dp.Rows[0][0].ToString()) > 0)
+                                        {
+                                            SqlCommand query1 = new SqlCommand("SELECT SUM(Kwota) FROM Konto" + StalyLogowanie.pesel + " WHERE RodzajTransakcji = 'Wypłata' AND DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <= '" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'", con);
+                                            SqlDataReader queryResult1 = query1.ExecuteReader();
+                                            DataTable dd = new DataTable();
+                                            dd.Load(queryResult1);
+                                            DataRow de = dd.Rows[0];
+                                            wyplata = System.Double.Parse(de[0].ToString());
+
+                                            SqlCommand query4 = new SqlCommand("SELECT SUM(Kwota) FROM Konto" + StalyLogowanie.pesel + " WHERE RodzajTransakcji = 'Przelew wychodzący' AND DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <= '" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'", con);
+                                            SqlDataReader queryResult4 = query4.ExecuteReader();
+                                            DataTable dj = new DataTable();
+                                            dj.Load(queryResult4);
+                                            DataRow dk = dj.Rows[0];
+                                            przelewwychodzacy = System.Double.Parse(dk[0].ToString());
+
+                                            chart1.Series["s1"].Points.AddXY("Wypłata", wyplata);
+                                            chart1.Series["s1"].Points.AddXY("Przelew wychodzący", przelewwychodzacy);
+                                        }
+                                        else
+                                        {
+                                            przelewwychodzacy = 0;
+
+                                            SqlCommand query1 = new SqlCommand("SELECT SUM(Kwota) FROM Konto" + StalyLogowanie.pesel + " WHERE RodzajTransakcji = 'Wypłata' AND DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <= '" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'", con);
+                                            SqlDataReader queryResult1 = query1.ExecuteReader();
+                                            DataTable dd = new DataTable();
+                                            dd.Load(queryResult1);
+                                            DataRow de = dd.Rows[0];
+                                            wyplata = System.Double.Parse(de[0].ToString());
+
+                                            chart1.Series["s1"].Points.AddXY("Wypłata", wyplata);
+                                        }
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                wyplata = 0;
+
+                                SqlDataAdapter sdm = new SqlDataAdapter("SELECT Count(*) From Konto" + StalyLogowanie.pesel + " Where RodzajTransakcji = 'Wpłata' AND DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <= '" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'", con);
+                                DataTable dm = new DataTable();
+                                sdm.Fill(dm);
+                                if (System.Double.Parse(dm.Rows[0][0].ToString()) > 0)
+                                {
+                                    SqlDataAdapter sdn = new SqlDataAdapter("SELECT Count(*) From Konto" + StalyLogowanie.pesel + " Where RodzajTransakcji = 'Przelew przychodzący' AND DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <= '" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'", con);
+                                    DataTable dn = new DataTable();
+                                    sdn.Fill(dn);
+                                    if (System.Double.Parse(dn.Rows[0][0].ToString()) > 0)
+                                    {
+                                        SqlDataAdapter sdp = new SqlDataAdapter("SELECT Count(*) From Konto" + StalyLogowanie.pesel + " Where RodzajTransakcji = 'Przelew wychodzący' AND DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <= '" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'", con);
+                                        DataTable dp = new DataTable();
+                                        sdp.Fill(dp);
+                                        if (System.Double.Parse(dp.Rows[0][0].ToString()) > 0)
+                                        {
+                                            SqlCommand query2 = new SqlCommand("SELECT SUM(Kwota) FROM Konto" + StalyLogowanie.pesel + " WHERE RodzajTransakcji = 'Wpłata' AND DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <= '" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'", con);
+                                            SqlDataReader queryResult2 = query2.ExecuteReader();
+                                            DataTable df = new DataTable();
+                                            df.Load(queryResult2);
+                                            DataRow dg = df.Rows[0];
+                                            wplata = System.Double.Parse(dg[0].ToString());
+
+                                            SqlCommand query3 = new SqlCommand("SELECT SUM(Kwota) FROM Konto" + StalyLogowanie.pesel + " WHERE RodzajTransakcji = 'Przelew przychodzący' AND DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <= '" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'", con);
+                                            SqlDataReader queryResult3 = query3.ExecuteReader();
+                                            DataTable dh = new DataTable();
+                                            dh.Load(queryResult3);
+                                            DataRow di = dh.Rows[0];
+                                            przelewprzychodzacy = System.Double.Parse(di[0].ToString());
+
+                                            SqlCommand query4 = new SqlCommand("SELECT SUM(Kwota) FROM Konto" + StalyLogowanie.pesel + " WHERE RodzajTransakcji = 'Przelew wychodzący' AND DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <= '" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'", con);
+                                            SqlDataReader queryResult4 = query4.ExecuteReader();
+                                            DataTable dj = new DataTable();
+                                            dj.Load(queryResult4);
+                                            DataRow dk = dj.Rows[0];
+                                            przelewwychodzacy = System.Double.Parse(dk[0].ToString());
+
+                                            chart1.Series["s1"].Points.AddXY("Wpłata", wplata);
+                                            chart1.Series["s1"].Points.AddXY("Przelew przychodzący", przelewprzychodzacy);
+                                            chart1.Series["s1"].Points.AddXY("Przelew wychodzący", przelewwychodzacy);
+                                        }
+                                        else
+                                        {
+                                            przelewwychodzacy = 0;
+
+                                            SqlCommand query2 = new SqlCommand("SELECT SUM(Kwota) FROM Konto" + StalyLogowanie.pesel + " WHERE RodzajTransakcji = 'Wpłata' AND DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <= '" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'", con);
+                                            SqlDataReader queryResult2 = query2.ExecuteReader();
+                                            DataTable df = new DataTable();
+                                            df.Load(queryResult2);
+                                            DataRow dg = df.Rows[0];
+                                            wplata = System.Double.Parse(dg[0].ToString());
+
+                                            SqlCommand query3 = new SqlCommand("SELECT SUM(Kwota) FROM Konto" + StalyLogowanie.pesel + " WHERE RodzajTransakcji = 'Przelew przychodzący' AND DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <= '" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'", con);
+                                            SqlDataReader queryResult3 = query3.ExecuteReader();
+                                            DataTable dh = new DataTable();
+                                            dh.Load(queryResult3);
+                                            DataRow di = dh.Rows[0];
+                                            przelewprzychodzacy = System.Double.Parse(di[0].ToString());
+
+                                            chart1.Series["s1"].Points.AddXY("Wpłata", wplata);
+                                            chart1.Series["s1"].Points.AddXY("Przelew przychodzący", przelewprzychodzacy);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        przelewprzychodzacy = 0;
+
+                                        SqlDataAdapter sdp = new SqlDataAdapter("SELECT Count(*) From Konto" + StalyLogowanie.pesel + " Where RodzajTransakcji = 'Przelew wychodzący' AND DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <= '" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'", con);
+                                        DataTable dp = new DataTable();
+                                        sdp.Fill(dp);
+                                        if (System.Double.Parse(dp.Rows[0][0].ToString()) > 0)
+                                        {
+                                            SqlCommand query2 = new SqlCommand("SELECT SUM(Kwota) FROM Konto" + StalyLogowanie.pesel + " WHERE RodzajTransakcji = 'Wpłata' AND DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <= '" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'", con);
+                                            SqlDataReader queryResult2 = query2.ExecuteReader();
+                                            DataTable df = new DataTable();
+                                            df.Load(queryResult2);
+                                            DataRow dg = df.Rows[0];
+                                            wplata = System.Double.Parse(dg[0].ToString());
+
+                                            SqlCommand query4 = new SqlCommand("SELECT SUM(Kwota) FROM Konto" + StalyLogowanie.pesel + " WHERE RodzajTransakcji = 'Przelew wychodzący' AND DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <= '" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'", con);
+                                            SqlDataReader queryResult4 = query4.ExecuteReader();
+                                            DataTable dj = new DataTable();
+                                            dj.Load(queryResult4);
+                                            DataRow dk = dj.Rows[0];
+                                            przelewwychodzacy = System.Double.Parse(dk[0].ToString());
+
+                                            chart1.Series["s1"].Points.AddXY("Wpłata", wplata);
+                                            chart1.Series["s1"].Points.AddXY("Przelew wychodzący", przelewwychodzacy);
+                                        }
+                                        else
+                                        {
+                                            przelewwychodzacy = 0;
+
+                                            SqlCommand query2 = new SqlCommand("SELECT SUM(Kwota) FROM Konto" + StalyLogowanie.pesel + " WHERE RodzajTransakcji = 'Wpłata' AND DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <= '" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'", con);
+                                            SqlDataReader queryResult2 = query2.ExecuteReader();
+                                            DataTable df = new DataTable();
+                                            df.Load(queryResult2);
+                                            DataRow dg = df.Rows[0];
+                                            wplata = System.Double.Parse(dg[0].ToString());
+
+                                            chart1.Series["s1"].Points.AddXY("Wpłata", wplata);
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    wplata = 0;
+
+                                    SqlDataAdapter sdn = new SqlDataAdapter("SELECT Count(*) From Konto" + StalyLogowanie.pesel + " Where RodzajTransakcji = 'Przelew przychodzący' AND DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <= '" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'", con);
+                                    DataTable dn = new DataTable();
+                                    sdn.Fill(dn);
+                                    if (System.Double.Parse(dn.Rows[0][0].ToString()) > 0)
+                                    {
+                                        SqlDataAdapter sdp = new SqlDataAdapter("SELECT Count(*) From Konto" + StalyLogowanie.pesel + " Where RodzajTransakcji = 'Przelew wychodzący' AND DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <= '" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'", con);
+                                        DataTable dp = new DataTable();
+                                        sdp.Fill(dp);
+                                        if (System.Double.Parse(dp.Rows[0][0].ToString()) > 0)
+                                        {
+                                            SqlCommand query3 = new SqlCommand("SELECT SUM(Kwota) FROM Konto" + StalyLogowanie.pesel + " WHERE RodzajTransakcji = 'Przelew przychodzący' AND DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <= '" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'", con);
+                                            SqlDataReader queryResult3 = query3.ExecuteReader();
+                                            DataTable dh = new DataTable();
+                                            dh.Load(queryResult3);
+                                            DataRow di = dh.Rows[0];
+                                            przelewprzychodzacy = System.Double.Parse(di[0].ToString());
+
+                                            SqlCommand query4 = new SqlCommand("SELECT SUM(Kwota) FROM Konto" + StalyLogowanie.pesel + " WHERE RodzajTransakcji = 'Przelew wychodzący' AND DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <= '" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'", con);
+                                            SqlDataReader queryResult4 = query4.ExecuteReader();
+                                            DataTable dj = new DataTable();
+                                            dj.Load(queryResult4);
+                                            DataRow dk = dj.Rows[0];
+                                            przelewwychodzacy = System.Double.Parse(dk[0].ToString());
+
+                                            chart1.Series["s1"].Points.AddXY("Przelew przychodzący", przelewprzychodzacy);
+                                            chart1.Series["s1"].Points.AddXY("Przelew wychodzący", przelewwychodzacy);
+                                        }
+                                        else
+                                        {
+                                            przelewwychodzacy = 0;
+
+                                            SqlCommand query3 = new SqlCommand("SELECT SUM(Kwota) FROM Konto" + StalyLogowanie.pesel + " WHERE RodzajTransakcji = 'Przelew przychodzący' AND DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <= '" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'", con);
+                                            SqlDataReader queryResult3 = query3.ExecuteReader();
+                                            DataTable dh = new DataTable();
+                                            dh.Load(queryResult3);
+                                            DataRow di = dh.Rows[0];
+                                            przelewprzychodzacy = System.Double.Parse(di[0].ToString());
+
+                                            chart1.Series["s1"].Points.AddXY("Przelew przychodzący", przelewprzychodzacy);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        przelewprzychodzacy = 0;
+
+                                        SqlDataAdapter sdp = new SqlDataAdapter("SELECT Count(*) From Konto" + StalyLogowanie.pesel + " Where RodzajTransakcji = 'Przelew wychodzący' AND DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <= '" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'", con);
+                                        DataTable dp = new DataTable();
+                                        sdp.Fill(dp);
+                                        if (System.Double.Parse(dp.Rows[0][0].ToString()) > 0)
+                                        {
+                                            SqlCommand query4 = new SqlCommand("SELECT SUM(Kwota) FROM Konto" + StalyLogowanie.pesel + " WHERE RodzajTransakcji = 'Przelew wychodzący' AND DataTransakcji >= '" + dateTimePickerDataOd.Value.ToString("yyyy-MM-dd") + "' AND DataTransakcji <= '" + dateTimePickerDataDo.Value.ToString("yyyy-MM-dd") + "'", con);
+                                            SqlDataReader queryResult4 = query4.ExecuteReader();
+                                            DataTable dj = new DataTable();
+                                            dj.Load(queryResult4);
+                                            DataRow dk = dj.Rows[0];
+                                            przelewwychodzacy = System.Double.Parse(dk[0].ToString());
+
+                                            chart1.Series["s1"].Points.AddXY("Przelew wychodzący", przelewwychodzacy);
+                                        }
+                                        else
+                                        {
+                                            przelewwychodzacy = 0;
+                                            MessageBox.Show("Nie ma żadnych danych do pokazania.", "Brak danych", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        else 
+                        {
+                            MessageBox.Show("Brak danych dla podanego okresu.","Brak danych",MessageBoxButtons.OK,MessageBoxIcon.Warning);
+                        }
+                    }
+                    else
+                    {
+                        MessageBox.Show("Podany rodzaj konta do danego numeru PESEL nie istnieje. Wybierz prawidłowy rodzaj konta jakie posiadasz.", "Błąd rodzaj konta", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
+                    con.Close();
+                }
+            }
+        }
+    }
+}
