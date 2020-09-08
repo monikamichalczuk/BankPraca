@@ -1,0 +1,2016 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Drawing;
+using System.Data;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Numerics;
+
+namespace BankPraca
+{
+    public partial class KalkulatorKredytowy : UserControl
+    {
+        double rata = 0;
+        double ratak = 0;
+        double[] kapital1 = new double[62];
+        double[] kapital2 = new double[122];
+        double[] kapital3 = new double[242];
+        double[] ratakapitalowa1 = new double[62];
+        double[] ratakapitalowa2 = new double[122];
+        double[] ratakapitalowa3 = new double[242];
+        double[] odsetki1 = new double[62];
+        double[] odsetki2 = new double[122];
+        double[] odsetki3 = new double[242];
+        double prowizja = 0;
+        double odsetki = 0;
+        double s = 0;
+        double q = 0;
+        double n = 0;
+        double r = 0;
+        int i = 0;
+
+        public KalkulatorKredytowy()
+        {
+            InitializeComponent();
+            wniosekKredyt1.SendToBack();
+            wniosekKredyt1.Visible = false;
+        }
+
+        private void buttonOblicz_Click(object sender, EventArgs e)
+        {
+            rata = 0;
+            ratak = 0;
+            odsetki = 0;
+            r = 0;
+            n = 0;
+            q = 0;
+            
+            if(textBoxKwotaKredytu.Text.Length == 0) 
+            {
+                MessageBox.Show("Źle podana kwota kredytu.", "Błąd kwota kredytu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+            else if(System.Double.Parse(textBoxKwotaKredytu.Text) < 50000 || System.Double.Parse(textBoxKwotaKredytu.Text) > 1000000) 
+            {
+                MessageBox.Show("Kwota kredytu jest za mała bądź za duża. Musi być conajmniej 50 000zł, ale jednocześnie mniejsza niż 1 000 000zł.", "Błąd kwota kredytu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+            else 
+            {   
+                if(comboBoxRodzajKredytu.Text == "Wybierz") 
+                {
+                    MessageBox.Show("Źle podany rodzaj kredytu.", "Błąd rodzaj kredytu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+                else if(comboBoxRodzajKredytu.Text == "Kredyt dla młodych (2,0%)") 
+                {
+                    r = 2.0;
+
+                    if(comboBoxIloscRat.Text == "Wybierz") 
+                    {
+                        MessageBox.Show("Źle podana ilość rat.", "Błąd ilość rat", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
+                    else if(comboBoxIloscRat.Text == "60 rat") 
+                    {
+                        if(radioButtonRowne.Checked) 
+                        {
+                            s = System.Double.Parse(textBoxKwotaKredytu.Text);
+                            prowizja = s * 0.1 + s * 0.05;
+                            s = s + prowizja;
+                            n = 60;
+                            q = 1 + 0.083333333333333 * r / 100;
+                            rata = s * ((Math.Pow(q, n)) * ((q - 1)) / ((Math.Pow(q, n)) - 1));
+
+                            for (i = 1; i < 61; i++)
+                            {
+                                kapital1[1] = s;
+                                odsetki1[1] = kapital1[1] * r / 100 / 12;
+                                ratakapitalowa1[1] = rata - odsetki1[1];
+
+                                kapital1[i + 1] = kapital1[i] - ratakapitalowa1[i];
+                                odsetki1[i + 1] = kapital1[i+1] * r / 100 / 12;
+                                ratakapitalowa1[i + 1] = rata - odsetki1[i + 1];
+
+                                odsetki += odsetki1[i];
+                            }
+                            s = s + odsetki;
+                            s = Math.Round(s, 2);
+                            rata = Math.Round(rata, 2);
+
+                            DataTable kalkulator = new DataTable();
+
+                            kalkulator.Columns.Add("", typeof(string));
+                            kalkulator.Columns.Add("", typeof(string));
+
+                            kalkulator.Rows.Add("Kwota kredytu:", +s+"zł");
+                            kalkulator.Rows.Add("Rodzaj kredytu:", comboBoxRodzajKredytu.Text);
+                            kalkulator.Rows.Add("Oprocentowanie kredytu:", "2,0 %");
+                            kalkulator.Rows.Add("Ilość rat:", comboBoxIloscRat.Text);
+                            kalkulator.Rows.Add("Rodzaj rat:", radioButtonRowne.Text);
+                            kalkulator.Rows.Add("Rata 1:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 2:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 3:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 4:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 5:", "" + rata + "zł");
+                            kalkulator.Rows.Add("...", " ... ");
+                            kalkulator.Rows.Add("Rata 56:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 57:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 58:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 59:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 60:", "" + rata + "zł");
+
+                            dataGridView1.DataSource = kalkulator.DefaultView;
+                        }
+                        else if(radioButtonMalejace.Checked) 
+                        {
+                            s = System.Double.Parse(textBoxKwotaKredytu.Text);
+                            prowizja = s * 0.1 + s * 0.05;
+                            s = s + prowizja;
+                            n = 60.0;
+
+                            ratak = s / n;
+
+                            for (int i = 1; i < 61; i++)
+                            {
+                                kapital1[1] = s;
+                                odsetki1[1] = kapital1[1] * r / 100 / 12;
+                                ratakapitalowa1[1] = ratak + odsetki1[1];
+
+                                kapital1[i + 1] = kapital1[i] - ratak;
+                                odsetki1[i + 1] = kapital1[i + 1] * r / 100 / 12;
+                                ratakapitalowa1[i + 1] = ratak + odsetki1[i + 1];
+
+                                odsetki += odsetki1[i];
+                            }
+                            s = s + odsetki;
+                            s = Math.Round(s, 2);
+
+                            DataTable kalkulator = new DataTable();
+
+                            kalkulator.Columns.Add("", typeof(string));
+                            kalkulator.Columns.Add("", typeof(string));
+
+                            kalkulator.Rows.Add("Kwota kredytu:", +s+"zł");
+                            kalkulator.Rows.Add("Rodzaj kredytu:", comboBoxRodzajKredytu.Text);
+                            kalkulator.Rows.Add("Oprocentowanie kredytu:", "2,0 %");
+                            kalkulator.Rows.Add("Ilość rat:", comboBoxIloscRat.Text);
+                            kalkulator.Rows.Add("Rodzaj rat:", radioButtonMalejace.Text);
+
+                            s = 0;
+                            prowizja = 0;
+                            odsetki = 0;
+                            s = System.Double.Parse(textBoxKwotaKredytu.Text);
+                            prowizja = s * 0.1 + s * 0.05;
+                            s = s + prowizja;
+
+                            for (int i = 1; i < 61; i++)
+                            {
+                                kapital1[1] = s;
+                                odsetki1[1] = kapital1[1] * r / 100 / 12;
+                                ratakapitalowa1[1] = ratak + odsetki1[1];
+
+                                kapital1[i + 1] = kapital1[i] - ratak;
+                                odsetki1[i + 1] = kapital1[i + 1] * r / 100 / 12;
+                                ratakapitalowa1[i + 1] = ratak + odsetki1[i + 1];
+
+                                odsetki += odsetki1[i];
+
+                                ratak = Math.Round(ratak, 2);
+                                kapital1[i] = Math.Round(kapital1[i], 2);
+                                odsetki1[i] = Math.Round(odsetki1[i], 2);
+                                ratakapitalowa1[i] = Math.Round(ratakapitalowa1[i], 2);
+
+                                kalkulator.Rows.Add("Rata"+i+":", ratakapitalowa1[i]+"zł");
+                            }
+                            dataGridView1.DataSource = kalkulator.DefaultView;
+                        }
+                        else 
+                        {
+                            MessageBox.Show("Nie zaznaczony rodzaj rat", "Błąd rodzaj rat", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        }
+                    }
+                    else if(comboBoxIloscRat.Text == "120 rat") 
+                    {
+                        if (radioButtonRowne.Checked)
+                        {
+                            s = System.Double.Parse(textBoxKwotaKredytu.Text);
+                            prowizja = s * 0.1 + s * 0.05;
+                            s = s + prowizja;
+                            n = 120;
+                            q = 1 + 0.083333333333333 * r / 100;
+                            rata = s * ((Math.Pow(q, n)) * ((q - 1)) / ((Math.Pow(q, n)) - 1));
+
+                            for (i = 1; i < 121; i++)
+                            {
+                                kapital2[1] = s;
+                                odsetki2[1] = kapital2[1] * r / 100 / 12;
+                                ratakapitalowa2[1] = rata - odsetki2[1];
+
+                                kapital2[i + 1] = kapital2[i] - ratakapitalowa2[i];
+                                odsetki2[i + 1] = kapital2[i+1] * r / 100 / 12;
+                                ratakapitalowa2[i + 1] = rata - odsetki2[i + 1];
+
+                                odsetki += odsetki2[i];
+                            }
+                            s = s + odsetki;
+                            s = Math.Round(s, 2);
+                            rata = Math.Round(rata, 2);
+
+                            DataTable kalkulator = new DataTable();
+
+                            kalkulator.Columns.Add("", typeof(string));
+                            kalkulator.Columns.Add("", typeof(string));
+
+                            kalkulator.Rows.Add("Kwota kredytu:", s+"zł");
+                            kalkulator.Rows.Add("Rodzaj kredytu:", comboBoxRodzajKredytu.Text);
+                            kalkulator.Rows.Add("Oprocentowanie kredytu:", "2,0 %");
+                            kalkulator.Rows.Add("Ilość rat:", comboBoxIloscRat.Text);
+                            kalkulator.Rows.Add("Rodzaj rat:", radioButtonRowne.Text);
+                            kalkulator.Rows.Add("Rata 1:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 2:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 3:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 4:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 5:", "" + rata + "zł");
+                            kalkulator.Rows.Add("...", " ... ");
+                            kalkulator.Rows.Add("Rata 116:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 117:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 118:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 119:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 120:", "" + rata + "zł");
+
+                            dataGridView1.DataSource = kalkulator.DefaultView;
+                        }
+                        else if (radioButtonMalejace.Checked)
+                        {
+                            s = System.Double.Parse(textBoxKwotaKredytu.Text);
+                            prowizja = s * 0.1 + s * 0.05;
+                            s = s + prowizja;
+                            n = 120.0;
+
+                            ratak = s / n;
+
+                            for (int i = 1; i < 121; i++)
+                            {
+                                kapital2[1] = s;
+                                odsetki2[1] = kapital2[1] * r / 100 / 12;
+                                ratakapitalowa2[1] = ratak + odsetki2[1];
+
+                                kapital2[i + 1] = kapital2[i] - ratak;
+                                odsetki2[i + 1] = kapital2[i + 1] * r / 100 / 12;
+                                ratakapitalowa2[i + 1] = ratak + odsetki2[i + 1];
+
+                                odsetki += odsetki2[i];
+                            }
+                            s = s + odsetki;
+                            s = Math.Round(s, 2);
+
+                            DataTable kalkulator = new DataTable();
+
+                            kalkulator.Columns.Add("", typeof(string));
+                            kalkulator.Columns.Add("", typeof(string));
+
+                            kalkulator.Rows.Add("Kwota kredytu:", s+"zł");
+                            kalkulator.Rows.Add("Rodzaj kredytu:", comboBoxRodzajKredytu.Text);
+                            kalkulator.Rows.Add("Oprocentowanie kredytu:", "2,0 %");
+                            kalkulator.Rows.Add("Ilość rat:", comboBoxIloscRat.Text);
+                            kalkulator.Rows.Add("Rodzaj rat:", radioButtonMalejace.Text);
+
+                            s = 0;
+                            prowizja = 0;
+                            odsetki = 0;
+                            s = System.Double.Parse(textBoxKwotaKredytu.Text);
+                            prowizja = s * 0.1 + s * 0.05;
+                            s = s + prowizja;
+
+                            for (int i = 1; i < 121; i++)
+                            {
+                                kapital2[1] = s;
+                                odsetki2[1] = kapital2[1] * r / 100 / 12;
+                                ratakapitalowa2[1] = ratak + odsetki2[1];
+
+                                kapital2[i + 1] = kapital2[i] - ratak;
+                                odsetki2[i + 1] = kapital2[i + 1] * r / 100 / 12;
+                                ratakapitalowa2[i + 1] = ratak + odsetki2[i + 1];
+
+                                odsetki += odsetki2[i];
+
+                                ratak = Math.Round(ratak, 2);
+                                kapital2[i] = Math.Round(kapital2[i], 2);
+                                odsetki2[i] = Math.Round(odsetki2[i], 2);
+                                ratakapitalowa2[i] = Math.Round(ratakapitalowa2[i], 2);
+
+                                kalkulator.Rows.Add("Rata" + i + ":", ratakapitalowa2[i]+"zł");
+                            }
+                            dataGridView1.DataSource = kalkulator.DefaultView;
+                        }
+                        else
+                        {
+                            MessageBox.Show("Nie zaznaczony rodzaj rat", "Błąd rodzaj rat", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        }
+
+                    }
+                    else if(comboBoxIloscRat.Text == "240 rat") 
+                    {
+                        if (radioButtonRowne.Checked)
+                        {
+                            s = System.Double.Parse(textBoxKwotaKredytu.Text);
+                            prowizja = s * 0.1 + s * 0.05;
+                            s = s + prowizja;
+                            n = 240;
+                            q = 1 + 0.083333333333333 * r / 100;
+                            rata = s * ((Math.Pow(q, n)) * ((q - 1)) / ((Math.Pow(q, n)) - 1));
+
+                            for (i = 1; i < 241; i++)
+                            {
+                                kapital3[1] = s;
+                                odsetki3[1] = kapital3[1] * r / 100 / 12;
+                                ratakapitalowa3[1] = rata - odsetki3[1];
+
+                                kapital3[i + 1] = kapital3[i] - ratakapitalowa3[i];
+                                odsetki3[i + 1] = kapital3[i+1] * r / 100 / 12;
+                                ratakapitalowa3[i + 1] = rata - odsetki3[i + 1];
+
+                                odsetki += odsetki3[i];
+                            }
+                            s = s + odsetki;
+                            s = Math.Round(s, 2);
+                            rata = Math.Round(rata, 2);
+
+                            DataTable kalkulator = new DataTable();
+
+                            kalkulator.Columns.Add("", typeof(string));
+                            kalkulator.Columns.Add("", typeof(string));
+
+                            kalkulator.Rows.Add("Kwota kredytu:", s+"zł");
+                            kalkulator.Rows.Add("Rodzaj kredytu:", comboBoxRodzajKredytu.Text);
+                            kalkulator.Rows.Add("Oprocentowanie kredytu:", "2,0 %");
+                            kalkulator.Rows.Add("Ilość rat:", comboBoxIloscRat.Text);
+                            kalkulator.Rows.Add("Rodzaj rat:", radioButtonRowne.Text);
+                            kalkulator.Rows.Add("Rata 1:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 2:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 3:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 4:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 5:", "" + rata + "zł");
+                            kalkulator.Rows.Add("...", " ... ");
+                            kalkulator.Rows.Add("Rata 236:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 237:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 238:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 239:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 240:", "" + rata + "zł");
+
+                            dataGridView1.DataSource = kalkulator.DefaultView;
+                        }
+                        else if (radioButtonMalejace.Checked)
+                        {
+                            s = System.Double.Parse(textBoxKwotaKredytu.Text);
+                            prowizja = s * 0.1 + s * 0.05;
+                            s = s + prowizja;
+                            n = 240.0;
+
+                            ratak = s / n;
+
+                            for (int i = 1; i < 241; i++)
+                            {
+                                kapital3[1] = s;
+                                odsetki3[1] = kapital3[1] * r / 100 / 12;
+                                ratakapitalowa3[1] = ratak + odsetki3[1];
+
+                                kapital3[i + 1] = kapital3[i] - ratak;
+                                odsetki3[i + 1] = kapital3[i + 1] * r / 100 / 12;
+                                ratakapitalowa3[i + 1] = ratak + odsetki3[i + 1];
+
+                                odsetki += odsetki3[i];
+                            }
+                            s = s + odsetki;
+                            s = Math.Round(s, 2);
+
+                            DataTable kalkulator = new DataTable();
+
+                            kalkulator.Columns.Add("", typeof(string));
+                            kalkulator.Columns.Add("", typeof(string));
+
+                            kalkulator.Rows.Add("Kwota kredytu:", s+"zł");
+                            kalkulator.Rows.Add("Rodzaj kredytu:", comboBoxRodzajKredytu.Text);
+                            kalkulator.Rows.Add("Oprocentowanie kredytu:", "2,0 %");
+                            kalkulator.Rows.Add("Ilość rat:", comboBoxIloscRat.Text);
+                            kalkulator.Rows.Add("Rodzaj rat:", radioButtonMalejace.Text);
+
+                            s = 0;
+                            prowizja = 0;
+                            odsetki = 0;
+                            s = System.Double.Parse(textBoxKwotaKredytu.Text);
+                            prowizja = s * 0.1 + s * 0.05;
+                            s = s + prowizja;
+
+                            for (int i = 1; i < 241; i++)
+                            {
+                                kapital3[1] = s;
+                                odsetki3[1] = kapital3[1] * r / 100 / 12;
+                                ratakapitalowa3[1] = ratak + odsetki3[1];
+
+                                kapital3[i + 1] = kapital3[i] - ratak;
+                                odsetki3[i + 1] = kapital3[i + 1] * r / 100 / 12;
+                                ratakapitalowa3[i + 1] = ratak + odsetki3[i + 1];
+
+                                odsetki += odsetki3[i];
+
+                                ratak = Math.Round(ratak, 2);
+                                kapital3[i] = Math.Round(kapital3[i], 2);
+                                odsetki3[i] = Math.Round(odsetki3[i], 2);
+                                ratakapitalowa3[i] = Math.Round(ratakapitalowa3[i], 2);
+
+                                kalkulator.Rows.Add("Rata" + i + ":", ratakapitalowa3[i]+"zł");
+                            }
+                            dataGridView1.DataSource = kalkulator.DefaultView;
+                        }
+                        else
+                        {
+                            MessageBox.Show("Nie zaznaczony rodzaj rat", "Błąd rodzaj rat", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        }
+                    }
+                }
+                else if(comboBoxRodzajKredytu.Text == "Kredyt mieszkaniowy (4,5%)") 
+                {
+                    r = 4.5;
+
+                    if (comboBoxIloscRat.Text == "Wybierz")
+                    {
+                        MessageBox.Show("Źle podana ilość rat.", "Błąd ilość rat", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
+                    else if (comboBoxIloscRat.Text == "60 rat")
+                    {
+                        if (radioButtonRowne.Checked)
+                        {
+                            s = System.Double.Parse(textBoxKwotaKredytu.Text);
+                            prowizja = s * 0.1 + s * 0.05;
+                            s = s + prowizja;
+                            n = 60;
+                            q = 1 + 0.083333333333333 * r / 100;
+                            rata = s * ((Math.Pow(q, n)) * ((q - 1)) / ((Math.Pow(q, n)) - 1));
+
+                            for (i = 1; i < 61; i++)
+                            {
+                                kapital1[1] = s;
+                                odsetki1[1] = kapital1[1] * r / 100 / 12;
+                                ratakapitalowa1[1] = rata - odsetki1[1];
+
+                                kapital1[i + 1] = kapital1[i] - ratakapitalowa1[i];
+                                odsetki1[i + 1] = kapital1[i+1] * r / 100 / 12;
+                                ratakapitalowa1[i + 1] = rata - odsetki1[i + 1];
+
+                                odsetki += odsetki1[i];
+                            }
+                            s = s + odsetki;
+                            s = Math.Round(s, 2);
+                            rata = Math.Round(rata, 2);
+
+                            DataTable kalkulator = new DataTable();
+
+                            kalkulator.Columns.Add("", typeof(string));
+                            kalkulator.Columns.Add("", typeof(string));
+
+                            kalkulator.Rows.Add("Kwota kredytu:", s+"zł");
+                            kalkulator.Rows.Add("Rodzaj kredytu:", comboBoxRodzajKredytu.Text);
+                            kalkulator.Rows.Add("Oprocentowanie kredytu:", "4,5 %");
+                            kalkulator.Rows.Add("Ilość rat:", comboBoxIloscRat.Text);
+                            kalkulator.Rows.Add("Rodzaj rat:", radioButtonRowne.Text);
+                            kalkulator.Rows.Add("Rata 1:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 2:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 3:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 4:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 5:", "" + rata + "zł");
+                            kalkulator.Rows.Add("...", " ... ");
+                            kalkulator.Rows.Add("Rata 56:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 57:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 58:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 59:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 60:", "" + rata + "zł");
+
+                            dataGridView1.DataSource = kalkulator.DefaultView;
+                        }
+                        else if (radioButtonMalejace.Checked)
+                        {
+                            s = System.Double.Parse(textBoxKwotaKredytu.Text);
+                            prowizja = s * 0.1 + s * 0.05;
+                            s = s + prowizja;
+                            n = 60.0;
+
+                            ratak = s / n;
+
+                            for (int i = 1; i < 61; i++)
+                            {
+                                kapital1[1] = s;
+                                odsetki1[1] = kapital1[1] * r / 100 / 12;
+                                ratakapitalowa1[1] = ratak + odsetki1[1];
+
+                                kapital1[i + 1] = kapital1[i] - ratak;
+                                odsetki1[i + 1] = kapital1[i + 1] * r / 100 / 12;
+                                ratakapitalowa1[i + 1] = ratak + odsetki1[i + 1];
+
+                                odsetki += odsetki1[i];
+                            }
+                            s = s + odsetki;
+                            s = Math.Round(s, 2);
+
+                            DataTable kalkulator = new DataTable();
+
+                            kalkulator.Columns.Add("", typeof(string));
+                            kalkulator.Columns.Add("", typeof(string));
+
+                            kalkulator.Rows.Add("Kwota kredytu:", s+"zł");
+                            kalkulator.Rows.Add("Rodzaj kredytu:", comboBoxRodzajKredytu.Text);
+                            kalkulator.Rows.Add("Oprocentowanie kredytu:", "4,5 %");
+                            kalkulator.Rows.Add("Ilość rat:", comboBoxIloscRat.Text);
+                            kalkulator.Rows.Add("Rodzaj rat:", radioButtonMalejace.Text);
+
+                            s = 0;
+                            prowizja = 0;
+                            odsetki = 0;
+                            s = System.Double.Parse(textBoxKwotaKredytu.Text);
+                            prowizja = s * 0.1 + s * 0.05;
+                            s = s + prowizja;
+
+                            for (int i = 1; i < 61; i++)
+                            {
+                                kapital1[1] = s;
+                                odsetki1[1] = kapital1[1] * r / 100 / 12;
+                                ratakapitalowa1[1] = ratak + odsetki1[1];
+
+                                kapital1[i + 1] = kapital1[i] - ratak;
+                                odsetki1[i + 1] = kapital1[i + 1] * r / 100 / 12;
+                                ratakapitalowa1[i + 1] = ratak + odsetki1[i + 1];
+
+                                odsetki += odsetki1[i];
+
+                                ratak = Math.Round(ratak, 2);
+                                kapital1[i] = Math.Round(kapital1[i], 2);
+                                odsetki1[i] = Math.Round(odsetki1[i], 2);
+                                ratakapitalowa1[i] = Math.Round(ratakapitalowa1[i], 2);
+
+                                kalkulator.Rows.Add("Rata" + i + ":", ratakapitalowa1[i]+"zł");
+                            }
+                            dataGridView1.DataSource = kalkulator.DefaultView;
+                        }
+                        else
+                        {
+                            MessageBox.Show("Nie zaznaczony rodzaj rat", "Błąd rodzaj rat", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        }
+                    }
+                    else if (comboBoxIloscRat.Text == "120 rat")
+                    {
+                        if (radioButtonRowne.Checked)
+                        {
+                            s = System.Double.Parse(textBoxKwotaKredytu.Text);
+                            prowizja = s * 0.1 + s * 0.05;
+                            s = s + prowizja;
+                            n = 120;
+                            q = 1 + 0.083333333333333 * r / 100;
+                            rata = s * ((Math.Pow(q, n)) * ((q - 1)) / ((Math.Pow(q, n)) - 1));
+
+                            for (i = 1; i < 121; i++)
+                            {
+                                kapital2[1] = s;
+                                odsetki2[1] = kapital2[1] * r / 100 / 12;
+                                ratakapitalowa2[1] = rata - odsetki2[1];
+
+                                kapital2[i + 1] = kapital2[i] - ratakapitalowa2[i];
+                                odsetki2[i + 1] = kapital2[i+1] * r / 100 / 12;
+                                ratakapitalowa2[i + 1] = rata - odsetki2[i + 1];
+
+                                odsetki += odsetki2[i];
+                            }
+                            s = s + odsetki;
+                            s = Math.Round(s, 2);
+                            rata = Math.Round(rata, 2);
+
+                            DataTable kalkulator = new DataTable();
+
+                            kalkulator.Columns.Add("", typeof(string));
+                            kalkulator.Columns.Add("", typeof(string));
+
+                            kalkulator.Rows.Add("Kwota kredytu:", s+"zł");
+                            kalkulator.Rows.Add("Rodzaj kredytu:", comboBoxRodzajKredytu.Text);
+                            kalkulator.Rows.Add("Oprocentowanie kredytu:", "4,5 %");
+                            kalkulator.Rows.Add("Ilość rat:", comboBoxIloscRat.Text);
+                            kalkulator.Rows.Add("Rodzaj rat:", radioButtonRowne.Text);
+                            kalkulator.Rows.Add("Rata 1:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 2:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 3:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 4:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 5:", "" + rata + "zł");
+                            kalkulator.Rows.Add("...", " ... ");
+                            kalkulator.Rows.Add("Rata 116:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 117:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 118:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 119:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 120:", "" + rata + "zł");
+
+                            dataGridView1.DataSource = kalkulator.DefaultView;
+                        }
+                        else if (radioButtonMalejace.Checked)
+                        {
+                            s = System.Double.Parse(textBoxKwotaKredytu.Text);
+                            prowizja = s * 0.1 + s * 0.05;
+                            s = s + prowizja;
+                            n = 120.0;
+
+                            ratak = s / n;
+
+                            for (int i = 1; i < 121; i++)
+                            {
+                                kapital2[1] = s;
+                                odsetki2[1] = kapital2[1] * r / 100 / 12;
+                                ratakapitalowa2[1] = ratak + odsetki2[1];
+
+                                kapital2[i + 1] = kapital2[i] - ratak;
+                                odsetki2[i + 1] = kapital2[i + 1] * r / 100 / 12;
+                                ratakapitalowa2[i + 1] = ratak + odsetki2[i + 1];
+
+                                odsetki += odsetki2[i];
+                            }
+                            s = s + odsetki;
+                            s = Math.Round(s, 2);
+
+                            DataTable kalkulator = new DataTable();
+
+                            kalkulator.Columns.Add("", typeof(string));
+                            kalkulator.Columns.Add("", typeof(string));
+
+                            kalkulator.Rows.Add("Kwota kredytu:", s+"zł");
+                            kalkulator.Rows.Add("Rodzaj kredytu:", comboBoxRodzajKredytu.Text);
+                            kalkulator.Rows.Add("Oprocentowanie kredytu:", "4,5 %");
+                            kalkulator.Rows.Add("Ilość rat:", comboBoxIloscRat.Text);
+                            kalkulator.Rows.Add("Rodzaj rat:", radioButtonMalejace.Text);
+
+                            s = 0;
+                            prowizja = 0;
+                            odsetki = 0;
+                            s = System.Double.Parse(textBoxKwotaKredytu.Text);
+                            prowizja = s * 0.1 + s * 0.05;
+                            s = s + prowizja;
+
+                            for (int i = 1; i < 121; i++)
+                            {
+                                kapital2[1] = s;
+                                odsetki2[1] = kapital2[1] * r / 100 / 12;
+                                ratakapitalowa2[1] = ratak + odsetki2[1];
+
+                                kapital2[i + 1] = kapital2[i] - ratak;
+                                odsetki2[i + 1] = kapital2[i + 1] * r / 100 / 12;
+                                ratakapitalowa2[i + 1] = ratak + odsetki2[i + 1];
+
+                                odsetki += odsetki2[i];
+
+                                ratak = Math.Round(ratak, 2);
+                                kapital2[i] = Math.Round(kapital2[i], 2);
+                                odsetki2[i] = Math.Round(odsetki2[i], 2);
+                                ratakapitalowa2[i] = Math.Round(ratakapitalowa2[i], 2);
+
+                                kalkulator.Rows.Add("Rata" + i + ":", ratakapitalowa2[i]+"zł");
+                            }
+                            dataGridView1.DataSource = kalkulator.DefaultView;
+                        }
+                        else
+                        {
+                            MessageBox.Show("Nie zaznaczony rodzaj rat", "Błąd rodzaj rat", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        }
+
+                    }
+                    else if (comboBoxIloscRat.Text == "240 rat")
+                    {     
+                        if (radioButtonRowne.Checked)
+                        {
+                            s = System.Double.Parse(textBoxKwotaKredytu.Text);
+                            prowizja = s * 0.1 + s * 0.05;
+                            s = s + prowizja;
+                            n = 240;
+                            q = 1 + 0.083333333333333 * r / 100;
+                            rata = s * ((Math.Pow(q, n)) * ((q - 1)) / ((Math.Pow(q, n)) - 1));
+
+                            for (i = 1; i < 241; i++)
+                            {
+                                kapital3[1] = s;
+                                odsetki3[1] = kapital3[1] * r / 100 / 12;
+                                ratakapitalowa3[1] = rata - odsetki3[1];
+
+                                kapital3[i + 1] = kapital3[i] - ratakapitalowa3[i];
+                                odsetki3[i + 1] = kapital3[i+1] * r / 100 / 12;
+                                ratakapitalowa3[i + 1] = rata - odsetki3[i + 1];
+
+                                odsetki += odsetki3[i];
+                            }
+                            s = s + odsetki;
+                            s = Math.Round(s, 2);
+                            rata = Math.Round(rata, 2);
+
+                            DataTable kalkulator = new DataTable();
+
+                            kalkulator.Columns.Add("", typeof(string));
+                            kalkulator.Columns.Add("", typeof(string));
+
+                            kalkulator.Rows.Add("Kwota kredytu:", s+"zł");
+                            kalkulator.Rows.Add("Rodzaj kredytu:", comboBoxRodzajKredytu.Text);
+                            kalkulator.Rows.Add("Oprocentowanie kredytu:", "4,5 %");
+                            kalkulator.Rows.Add("Ilość rat:", comboBoxIloscRat.Text);
+                            kalkulator.Rows.Add("Rodzaj rat:", radioButtonRowne.Text);
+                            kalkulator.Rows.Add("Rata 1:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 2:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 3:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 4:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 5:", "" + rata + "zł");
+                            kalkulator.Rows.Add("...", " ... ");
+                            kalkulator.Rows.Add("Rata 236:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 237:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 238:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 239:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 240:", "" + rata + "zł");
+
+                            dataGridView1.DataSource = kalkulator.DefaultView;
+                        }
+                        else if (radioButtonMalejace.Checked)
+                        {
+                            s = System.Double.Parse(textBoxKwotaKredytu.Text);
+                            prowizja = s * 0.1 + s * 0.05;
+                            s = s + prowizja;
+                            n = 240.0;
+
+                            ratak = s / n;
+
+                            for (int i = 1; i < 241; i++)
+                            {
+                                kapital3[1] = s;
+                                odsetki3[1] = kapital3[1] * r / 100 / 12;
+                                ratakapitalowa3[1] = ratak + odsetki3[1];
+
+                                kapital3[i + 1] = kapital3[i] - ratak;
+                                odsetki3[i + 1] = kapital3[i + 1] * r / 100 / 12;
+                                ratakapitalowa3[i + 1] = ratak + odsetki3[i + 1];
+
+                                odsetki += odsetki3[i];
+                            }
+                            s = s + odsetki;
+                            s = Math.Round(s, 2);
+
+                            DataTable kalkulator = new DataTable();
+
+                            kalkulator.Columns.Add("", typeof(string));
+                            kalkulator.Columns.Add("", typeof(string));
+
+                            kalkulator.Rows.Add("Kwota kredytu:", s+"zł");
+                            kalkulator.Rows.Add("Rodzaj kredytu:", comboBoxRodzajKredytu.Text);
+                            kalkulator.Rows.Add("Oprocentowanie kredytu:", "4,5 %");
+                            kalkulator.Rows.Add("Ilość rat:", comboBoxIloscRat.Text);
+                            kalkulator.Rows.Add("Rodzaj rat:", radioButtonMalejace.Text);
+
+                            s = 0;
+                            prowizja = 0;
+                            odsetki = 0;
+                            s = System.Double.Parse(textBoxKwotaKredytu.Text);
+                            prowizja = s * 0.1 + s * 0.05;
+                            s = s + prowizja;
+
+                            for (int i = 1; i < 241; i++)
+                            {
+                                kapital3[1] = s;
+                                odsetki3[1] = kapital3[1] * r / 100 / 12;
+                                ratakapitalowa3[1] = ratak + odsetki3[1];
+
+                                kapital3[i + 1] = kapital3[i] - ratak;
+                                odsetki3[i + 1] = kapital3[i + 1] * r / 100 / 12;
+                                ratakapitalowa3[i + 1] = ratak + odsetki3[i + 1];
+
+                                odsetki += odsetki3[i];
+
+                                ratak = Math.Round(ratak, 2);
+                                kapital3[i] = Math.Round(kapital3[i], 2);
+                                odsetki3[i] = Math.Round(odsetki3[i], 2);
+                                ratakapitalowa3[i] = Math.Round(ratakapitalowa3[i], 2);
+
+                                kalkulator.Rows.Add("Rata" + i + ":", ratakapitalowa3[i]+"zł");
+                            }
+                            dataGridView1.DataSource = kalkulator.DefaultView;
+                        }
+                        else
+                        {
+                            MessageBox.Show("Nie zaznaczony rodzaj rat", "Błąd rodzaj rat", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        }
+                    }
+                }
+                else if(comboBoxRodzajKredytu.Text == "Kredyt samochodowy (3,5%)") 
+                {
+                    r = 3.5;
+
+                    if (comboBoxIloscRat.Text == "Wybierz")
+                    {
+                        MessageBox.Show("Źle podana ilość rat.", "Błąd ilość rat", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
+                    else if (comboBoxIloscRat.Text == "60 rat")
+                    {
+                        if (radioButtonRowne.Checked)
+                        {
+                            s = System.Double.Parse(textBoxKwotaKredytu.Text);
+                            prowizja = s * 0.1 + s * 0.05;
+                            s = s + prowizja;
+                            n = 60;
+                            q = 1 + 0.083333333333333 * r / 100;
+                            rata = s * ((Math.Pow(q, n)) * ((q - 1)) / ((Math.Pow(q, n)) - 1));
+
+                            for (i = 1; i < 61; i++)
+                            {
+                                kapital1[1] = s;
+                                odsetki1[1] = kapital1[1] * r / 100 / 12;
+                                ratakapitalowa1[1] = rata - odsetki1[1];
+
+                                kapital1[i + 1] = kapital1[i] - ratakapitalowa1[i];
+                                odsetki1[i + 1] = kapital1[i+1] * r / 100 / 12;
+                                ratakapitalowa1[i + 1] = rata - odsetki1[i + 1];
+
+                                odsetki += odsetki1[i];
+                            }
+                            s = s + odsetki;
+                            s = Math.Round(s, 2);
+                            rata = Math.Round(rata, 2);
+
+                            DataTable kalkulator = new DataTable();
+
+                            kalkulator.Columns.Add("", typeof(string));
+                            kalkulator.Columns.Add("", typeof(string));
+
+                            kalkulator.Rows.Add("Kwota kredytu:", s+"zł");
+                            kalkulator.Rows.Add("Rodzaj kredytu:", comboBoxRodzajKredytu.Text);
+                            kalkulator.Rows.Add("Oprocentowanie kredytu:", "3,5 %");
+                            kalkulator.Rows.Add("Ilość rat:", comboBoxIloscRat.Text);
+                            kalkulator.Rows.Add("Rodzaj rat:", radioButtonRowne.Text);
+                            kalkulator.Rows.Add("Rata 1:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 2:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 3:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 4:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 5:", "" + rata + "zł");
+                            kalkulator.Rows.Add("...", " ... ");
+                            kalkulator.Rows.Add("Rata 56:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 57:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 58:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 59:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 60:", "" + rata + "zł");
+
+                            dataGridView1.DataSource = kalkulator.DefaultView;
+                        }
+                        else if (radioButtonMalejace.Checked)
+                        {
+                            s = System.Double.Parse(textBoxKwotaKredytu.Text);
+                            prowizja = s * 0.1 + s * 0.05;
+                            s = s + prowizja;
+                            n = 60.0;
+
+                            ratak = s / n;
+
+                            for (int i = 1; i < 61; i++)
+                            {
+                                kapital1[1] = s;
+                                odsetki1[1] = kapital1[1] * r / 100 / 12;
+                                ratakapitalowa1[1] = ratak + odsetki1[1];
+
+                                kapital1[i + 1] = kapital1[i] - ratak;
+                                odsetki1[i + 1] = kapital1[i + 1] * r / 100 / 12;
+                                ratakapitalowa1[i + 1] = ratak + odsetki1[i + 1];
+
+                                odsetki += odsetki1[i];
+                            }
+                            s = s + odsetki;
+                            s = Math.Round(s, 2);
+
+                            DataTable kalkulator = new DataTable();
+
+                            kalkulator.Columns.Add("", typeof(string));
+                            kalkulator.Columns.Add("", typeof(string));
+
+                            kalkulator.Rows.Add("Kwota kredytu:", s+"zł");
+                            kalkulator.Rows.Add("Rodzaj kredytu:", comboBoxRodzajKredytu.Text);
+                            kalkulator.Rows.Add("Oprocentowanie kredytu:", "4,5 %");
+                            kalkulator.Rows.Add("Ilość rat:", comboBoxIloscRat.Text);
+                            kalkulator.Rows.Add("Rodzaj rat:", radioButtonMalejace.Text);
+
+                            s = 0;
+                            prowizja = 0;
+                            odsetki = 0;
+                            s = System.Double.Parse(textBoxKwotaKredytu.Text);
+                            prowizja = s * 0.1 + s * 0.05;
+                            s = s + prowizja;
+
+                            for (int i = 1; i < 61; i++)
+                            {
+                                kapital1[1] = s;
+                                odsetki1[1] = kapital1[1] * r / 100 / 12;
+                                ratakapitalowa1[1] = ratak + odsetki1[1];
+
+                                kapital1[i + 1] = kapital1[i] - ratak;
+                                odsetki1[i + 1] = kapital1[i + 1] * r / 100 / 12;
+                                ratakapitalowa1[i + 1] = ratak + odsetki1[i + 1];
+
+                                odsetki += odsetki1[i];
+
+                                ratak = Math.Round(ratak, 2);
+                                kapital1[i] = Math.Round(kapital1[i], 2);
+                                odsetki1[i] = Math.Round(odsetki1[i], 2);
+                                ratakapitalowa1[i] = Math.Round(ratakapitalowa1[i], 2);
+
+                                kalkulator.Rows.Add("Rata" + i + ":", ratakapitalowa1[i]+"zł");
+                            }
+                            dataGridView1.DataSource = kalkulator.DefaultView;
+                        }
+                        else
+                        {
+                            MessageBox.Show("Nie zaznaczony rodzaj rat", "Błąd rodzaj rat", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        }
+                    }
+                    else if (comboBoxIloscRat.Text == "120 rat")
+                    {
+                        if (radioButtonRowne.Checked)
+                        {
+                            s = System.Double.Parse(textBoxKwotaKredytu.Text);
+                            prowizja = s * 0.1 + s * 0.05;
+                            s = s + prowizja;
+                            n = 120;
+                            q = 1 + 0.083333333333333 * r / 100;
+                            rata = s * ((Math.Pow(q, n)) * ((q - 1)) / ((Math.Pow(q, n)) - 1));
+
+                            for (i = 1; i < 121; i++)
+                            {
+                                kapital2[1] = s;
+                                odsetki2[1] = kapital2[1] * r / 100 / 12;
+                                ratakapitalowa2[1] = rata - odsetki2[1];
+
+                                kapital2[i + 1] = kapital2[i] - ratakapitalowa2[i];
+                                odsetki2[i + 1] = kapital2[i+1] * r / 100 / 12;
+                                ratakapitalowa2[i + 1] = rata - odsetki2[i + 1];
+
+                                odsetki += odsetki2[i];
+                            }
+                            s = s + odsetki;
+                            s = Math.Round(s, 2);
+                            rata = Math.Round(rata, 2);
+
+                            DataTable kalkulator = new DataTable();
+
+                            kalkulator.Columns.Add("", typeof(string));
+                            kalkulator.Columns.Add("", typeof(string));
+
+                            kalkulator.Rows.Add("Kwota kredytu:", s+"zł");
+                            kalkulator.Rows.Add("Rodzaj kredytu:", comboBoxRodzajKredytu.Text);
+                            kalkulator.Rows.Add("Oprocentowanie kredytu:", "3,5 %");
+                            kalkulator.Rows.Add("Ilość rat:", comboBoxIloscRat.Text);
+                            kalkulator.Rows.Add("Rodzaj rat:", radioButtonRowne.Text);
+                            kalkulator.Rows.Add("Rata 1:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 2:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 3:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 4:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 5:", "" + rata + "zł");
+                            kalkulator.Rows.Add("...", " ... ");
+                            kalkulator.Rows.Add("Rata 116:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 117:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 118:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 119:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 120:", "" + rata + "zł");
+
+                            dataGridView1.DataSource = kalkulator.DefaultView;
+                        }
+                        else if (radioButtonMalejace.Checked)
+                        {
+                            s = System.Double.Parse(textBoxKwotaKredytu.Text);
+                            prowizja = s * 0.1 + s * 0.05;
+                            s = s + prowizja;
+                            n = 120.0;
+
+                            ratak = s / n;
+
+                            for (int i = 1; i < 121; i++)
+                            {
+                                kapital2[1] = s;
+                                odsetki2[1] = kapital2[1] * r / 100 / 12;
+                                ratakapitalowa2[1] = ratak + odsetki2[1];
+
+                                kapital2[i + 1] = kapital2[i] - ratak;
+                                odsetki2[i + 1] = kapital2[i + 1] * r / 100 / 12;
+                                ratakapitalowa2[i + 1] = ratak + odsetki2[i + 1];
+
+                                odsetki += odsetki2[i];
+                            }
+                            s = s + odsetki;
+                            s = Math.Round(s, 2);
+
+                            DataTable kalkulator = new DataTable();
+
+                            kalkulator.Columns.Add("", typeof(string));
+                            kalkulator.Columns.Add("", typeof(string));
+
+                            kalkulator.Rows.Add("Kwota kredytu:", s+"zł");
+                            kalkulator.Rows.Add("Rodzaj kredytu:", comboBoxRodzajKredytu.Text);
+                            kalkulator.Rows.Add("Oprocentowanie kredytu:", "3,5 %");
+                            kalkulator.Rows.Add("Ilość rat:", comboBoxIloscRat.Text);
+                            kalkulator.Rows.Add("Rodzaj rat:", radioButtonMalejace.Text);
+
+                            s = 0;
+                            prowizja = 0;
+                            odsetki = 0;
+                            s = System.Double.Parse(textBoxKwotaKredytu.Text);
+                            prowizja = s * 0.1 + s * 0.05;
+                            s = s + prowizja;
+
+                            for (int i = 1; i < 121; i++)
+                            {
+                                kapital2[1] = s;
+                                odsetki2[1] = kapital2[1] * r / 100 / 12;
+                                ratakapitalowa2[1] = ratak + odsetki2[1];
+
+                                kapital2[i + 1] = kapital2[i] - ratak;
+                                odsetki2[i + 1] = kapital2[i + 1] * r / 100 / 12;
+                                ratakapitalowa2[i + 1] = ratak + odsetki2[i + 1];
+
+                                odsetki += odsetki2[i];
+
+                                ratak = Math.Round(ratak, 2);
+                                kapital2[i] = Math.Round(kapital2[i], 2);
+                                odsetki2[i] = Math.Round(odsetki2[i], 2);
+                                ratakapitalowa2[i] = Math.Round(ratakapitalowa2[i], 2);
+
+                                kalkulator.Rows.Add("Rata" + i + ":", ratakapitalowa2[i]+"zł");
+                            }
+                            dataGridView1.DataSource = kalkulator.DefaultView;
+                        }
+                        else
+                        {
+                            MessageBox.Show("Nie zaznaczony rodzaj rat", "Błąd rodzaj rat", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        }
+
+                    }
+                    else if (comboBoxIloscRat.Text == "240 rat")
+                    {
+                        if (radioButtonRowne.Checked)
+                        {
+                            s = System.Double.Parse(textBoxKwotaKredytu.Text);
+                            prowizja = s * 0.1 + s * 0.05;
+                            s = s + prowizja;
+                            n = 240;
+                            q = 1 + 0.083333333333333 * r / 100;
+                            rata = s * ((Math.Pow(q, n)) * ((q - 1)) / ((Math.Pow(q, n)) - 1));
+
+                            for (i = 1; i < 241; i++)
+                            {
+                                kapital3[1] = s;
+                                odsetki3[1] = kapital3[1] * r / 100 / 12;
+                                ratakapitalowa3[1] = rata - odsetki3[1];
+
+                                kapital3[i + 1] = kapital3[i] - ratakapitalowa3[i];
+                                odsetki3[i + 1] = kapital3[i+1] * r / 100 / 12;
+                                ratakapitalowa3[i + 1] = rata - odsetki3[i + 1];
+
+                                odsetki += odsetki3[i];
+                            }
+                            s = s + odsetki;
+                            s = Math.Round(s, 2);
+                            rata = Math.Round(rata, 2);
+
+                            DataTable kalkulator = new DataTable();
+
+                            kalkulator.Columns.Add("", typeof(string));
+                            kalkulator.Columns.Add("", typeof(string));
+
+                            kalkulator.Rows.Add("Kwota kredytu:", s+"zł");
+                            kalkulator.Rows.Add("Rodzaj kredytu:", comboBoxRodzajKredytu.Text);
+                            kalkulator.Rows.Add("Oprocentowanie kredytu:", "3,5 %");
+                            kalkulator.Rows.Add("Ilość rat:", comboBoxIloscRat.Text);
+                            kalkulator.Rows.Add("Rodzaj rat:", radioButtonRowne.Text);
+                            kalkulator.Rows.Add("Rata 1:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 2:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 3:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 4:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 5:", "" + rata + "zł");
+                            kalkulator.Rows.Add("...", " ... ");
+                            kalkulator.Rows.Add("Rata 236:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 237:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 238:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 239:", "" + rata + "zł");
+                            kalkulator.Rows.Add("Rata 240:", "" + rata + "zł");
+
+                            dataGridView1.DataSource = kalkulator.DefaultView;
+                        }
+                        else if (radioButtonMalejace.Checked)
+                        {
+                            s = System.Double.Parse(textBoxKwotaKredytu.Text);
+                            prowizja = s * 0.1 + s * 0.05;
+                            s = s + prowizja;
+                            n = 240.0;
+
+                            ratak = s / n;
+
+                            for (int i = 1; i < 241; i++)
+                            {
+                                kapital3[1] = s;
+                                odsetki3[1] = kapital3[1] * r / 100 / 12;
+                                ratakapitalowa3[1] = ratak + odsetki3[1];
+
+                                kapital3[i + 1] = kapital3[i] - ratak;
+                                odsetki3[i + 1] = kapital3[i + 1] * r / 100 / 12;
+                                ratakapitalowa3[i + 1] = ratak + odsetki3[i + 1];
+
+                                odsetki += odsetki3[i];
+                            }
+                            s = s + odsetki;
+                            s = Math.Round(s, 2);
+
+                            DataTable kalkulator = new DataTable();
+
+                            kalkulator.Columns.Add("", typeof(string));
+                            kalkulator.Columns.Add("", typeof(string));
+
+                            kalkulator.Rows.Add("Kwota kredytu:", s+"zł");
+                            kalkulator.Rows.Add("Rodzaj kredytu:", comboBoxRodzajKredytu.Text);
+                            kalkulator.Rows.Add("Oprocentowanie kredytu:", "3,5 %");
+                            kalkulator.Rows.Add("Ilość rat:", comboBoxIloscRat.Text);
+                            kalkulator.Rows.Add("Rodzaj rat:", radioButtonMalejace.Text);
+
+                            s = 0;
+                            prowizja = 0;
+                            odsetki = 0;
+                            s = System.Double.Parse(textBoxKwotaKredytu.Text);
+                            prowizja = s * 0.1 + s * 0.05;
+                            s = s + prowizja;
+
+                            for (int i = 1; i < 241; i++)
+                            {
+                                kapital3[1] = s;
+                                odsetki3[1] = kapital3[1] * r / 100 / 12;
+                                ratakapitalowa3[1] = ratak + odsetki3[1];
+
+                                kapital3[i + 1] = kapital3[i] - ratak;
+                                odsetki3[i + 1] = kapital3[i + 1] * r / 100 / 12;
+                                ratakapitalowa3[i + 1] = ratak + odsetki3[i + 1];
+
+                                odsetki += odsetki3[i];
+
+                                ratak = Math.Round(ratak, 2);
+                                kapital3[i] = Math.Round(kapital3[i], 2);
+                                odsetki3[i] = Math.Round(odsetki3[i], 2);
+                                ratakapitalowa3[i] = Math.Round(ratakapitalowa3[i], 2);
+
+                                kalkulator.Rows.Add("Rata" + i + ":", ratakapitalowa3[i]+"zł");
+                            }
+                            dataGridView1.DataSource = kalkulator.DefaultView;
+                        }
+                        else
+                        {
+                            MessageBox.Show("Nie zaznaczony rodzaj rat", "Błąd rodzaj rat", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        }
+                    }
+                }
+            }
+        }
+
+        private void textBoxKwotaKredytu_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.D0 || e.KeyCode == Keys.D1 || e.KeyCode == Keys.D2 || e.KeyCode == Keys.D3 || e.KeyCode == Keys.D4 || e.KeyCode == Keys.D5 || e.KeyCode == Keys.D6 || e.KeyCode == Keys.D7 || e.KeyCode == Keys.D8 || e.KeyCode == Keys.D9 || e.KeyCode == Keys.NumPad0 || e.KeyCode == Keys.NumPad1 || e.KeyCode == Keys.NumPad2 || e.KeyCode == Keys.NumPad3 || e.KeyCode == Keys.NumPad4 || e.KeyCode == Keys.NumPad5 || e.KeyCode == Keys.NumPad6 || e.KeyCode == Keys.NumPad7 || e.KeyCode == Keys.NumPad8 || e.KeyCode == Keys.NumPad9 || e.KeyCode == Keys.Back)
+            {
+                e.Handled = true;
+            }
+            else
+            {
+                textBoxKwotaKredytu.Clear();
+                MessageBox.Show("Źle wprowadzone. Podaj liczbę.", "Błąd kwota kredytu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        private void comboBoxRodzajKredytu_KeyUp(object sender, KeyEventArgs e)
+        {
+            comboBoxRodzajKredytu.SelectedItem = "Wybierz";
+            MessageBox.Show("Źle wprowadzone. Wybierz z listy", "Błąd rodzaj kredytu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+
+        private void comboBoxIloscRat_KeyUp(object sender, KeyEventArgs e)
+        {
+            comboBoxIloscRat.SelectedItem = "Wybierz";
+            MessageBox.Show("Źle wprowadzone. Wybierz z listy", "Błąd ilość rat", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+
+        private void buttonWniosek_Click(object sender, EventArgs e)
+        {
+            wniosekKredyt1.BringToFront();
+            wniosekKredyt1.Visible = true;
+        }
+
+        private void SplataKredytu_Click(object sender, EventArgs e)
+        {
+            s = 0;
+            r = 0;
+            n = 0;
+            q = 0;
+            rata = 0;
+            ratak = 0;
+            prowizja = 0;
+            odsetki = 0;
+
+            if(textBoxKwotaKredytu.Text.Length == 0) 
+            {
+                MessageBox.Show("Kwota kredytu nie została podana. Podaj kwotę.","Błąd kwota kredytu",MessageBoxButtons.OK,MessageBoxIcon.Warning);
+            }
+            else 
+            {
+                if(System.Double.Parse(textBoxKwotaKredytu.Text) < 50000 || System.Double.Parse(textBoxKwotaKredytu.Text) > 1000000) 
+                {
+                    MessageBox.Show("Kwota kredytu jest za mała bądź za duża. Kwota ta powinna być conajmniej 50 000zł, ale nie większa niż 1 000 000zł.", "Błąd kwota kredytu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+                else 
+                {
+                    if(comboBoxRodzajKredytu.Text == "Wybierz") 
+                    {
+                        MessageBox.Show("Rodzaj kredytu nie został wybrany. Wybierz z podanych.", "Błąd rodzaj kredytu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
+                    else 
+                    {
+                        if(comboBoxIloscRat.Text == "Wybierz") 
+                        {
+                            MessageBox.Show("Ilośc rat nie została wybrana. Wybierz z podanych.", "Błąd ilość rat", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        }
+                        else 
+                        {
+                            if(radioButtonRowne.Checked || radioButtonMalejace.Checked) 
+                            {
+                                Wykaz f2 = new Wykaz();
+                                f2.label2.Text = "Plan spłaty kredytu";
+                                f2.label8.Text = "Tutaj możesz sprawdzić jak będzie wyglądał Twój plan spłaty kredytu.";
+                                f2.groupBox1.Text = "Plan spłaty kredytu:";
+                                f2.Kredyt.Text = "Kredyt:";
+                                f2.KwotaKredytu.Text = "Kwota kredytu:";
+                                f2.KosztKredytu.Text = "Całkowity koszt kredytu:";
+                                f2.RodzajRatTytul.Text = "Rodzaj rat:";
+                                f2.RodzajKredytu.Text = comboBoxRodzajKredytu.Text;
+                                f2.WysokoscKredytu.Text = textBoxKwotaKredytu.Text+"zł";
+                                f2.IloscRat.Text = comboBoxIloscRat.Text;
+                                
+                                if(comboBoxRodzajKredytu.Text == "Kredyt dla młodych (2,0%)") 
+                                {
+                                    f2.Oprocentowanie1.Text = "2,0%";
+                                    r = 2.0;
+
+                                    if(radioButtonRowne.Checked) 
+                                    {
+                                        f2.RodzajRat.Text = radioButtonRowne.Text;
+
+                                        DataTable kalkulator = new DataTable();
+
+                                        kalkulator.Columns.Add("Numer raty", typeof(double));
+                                        kalkulator.Columns.Add("Kapitał", typeof(string));
+                                        kalkulator.Columns.Add("Rata kapitałowa", typeof(string));
+                                        kalkulator.Columns.Add("Odsetki", typeof(string));
+                                        kalkulator.Columns.Add("Rata", typeof(string));
+
+                                        if(comboBoxIloscRat.Text == "60 rat") 
+                                        {
+                                            s = System.Double.Parse(textBoxKwotaKredytu.Text);
+                                            prowizja = s * 0.1 + s * 0.05;
+                                            s = s + prowizja;
+                                            n = 60;
+                                            q = 1 + 0.083333333333333 * r / 100;
+                                            rata = s * ((Math.Pow(q, n)) * ((q - 1)) / ((Math.Pow(q, n)) - 1));
+
+                                            for (i = 1; i < 61; i++)
+                                            {
+                                                kapital1[1] = s;
+                                                odsetki1[1] = kapital1[1] * r/100/12;
+                                                ratakapitalowa1[1] = rata - odsetki1[1];
+
+                                                kapital1[i+1] = kapital1[i] - ratakapitalowa1[i];
+                                                odsetki1[i+1] = kapital1[i+1] * r / 100/12;
+                                                ratakapitalowa1[i+1] = rata - odsetki1[i+1];
+
+                                                odsetki += odsetki1[i];
+
+                                                rata = Math.Round(rata, 2);
+                                                kapital1[i] = Math.Round(kapital1[i],2);
+                                                odsetki1[i] = Math.Round(odsetki1[i], 2);
+                                                ratakapitalowa1[i] = Math.Round(ratakapitalowa1[i], 2);
+
+                                                kalkulator.Rows.Add( i , kapital1[i]+"zł", ratakapitalowa1[i]+"zł", odsetki1[i]+"zł", rata+"zł");
+                                            }
+                                            f2.dataGridView1.DataSource = kalkulator.DefaultView;
+                                            s = s + odsetki;
+                                            s = Math.Round(s,2);
+                                            prowizja = Math.Round(prowizja,2);
+                                            f2.KosztKredytu1.Text = s.ToString()+"zł";
+                                            f2.Prowizja1.Text = prowizja.ToString()+"zł";
+
+                                        }
+                                        else if(comboBoxIloscRat.Text == "120 rat") 
+                                        {
+                                            s = System.Double.Parse(textBoxKwotaKredytu.Text);
+                                            prowizja = s * 0.1 + s * 0.05;
+                                            s = s + prowizja;
+                                            n = 120;
+                                            q = 1 + 0.083333333333333 * r / 100;
+                                            rata = s * ((Math.Pow(q, n)) * ((q - 1)) / ((Math.Pow(q, n)) - 1));
+
+                                            for (i = 1; i < 121; i++)
+                                            {
+                                                kapital2[1] = s;
+                                                odsetki2[1] = kapital2[1] * r / 100 / 12;
+                                                ratakapitalowa2[1] = rata - odsetki2[1];
+
+                                                kapital2[i + 1] = kapital2[i] - ratakapitalowa2[i];
+                                                odsetki2[i + 1] = kapital2[i + 1] * r / 100 / 12;
+                                                ratakapitalowa2[i + 1] = rata - odsetki2[i + 1];
+
+                                                odsetki += odsetki2[i];
+
+                                                rata = Math.Round(rata, 2);
+                                                kapital2[i] = Math.Round(kapital2[i], 2);
+                                                odsetki2[i] = Math.Round(odsetki2[i], 2);
+                                                ratakapitalowa2[i] = Math.Round(ratakapitalowa2[i], 2);
+
+                                                kalkulator.Rows.Add(i, kapital2[i]+"zł", ratakapitalowa2[i]+"zł", odsetki2[i]+"zł", rata+"zł");
+                                            }
+                                            f2.dataGridView1.DataSource = kalkulator.DefaultView;
+                                            s = s + odsetki;
+                                            s = Math.Round(s, 2);
+                                            prowizja = Math.Round(prowizja, 2);
+                                            f2.KosztKredytu1.Text = s.ToString()+"zł";
+                                            f2.Prowizja1.Text = prowizja.ToString()+"zł";
+                                        }
+                                        else if(comboBoxIloscRat.Text == "240 rat") 
+                                        {
+                                            s = System.Double.Parse(textBoxKwotaKredytu.Text);
+                                            prowizja = s * 0.1 + s * 0.05;
+                                            s = s + prowizja;
+                                            n = 240;
+                                            q = 1 + 0.083333333333333 * r / 100;
+                                            rata = s * ((Math.Pow(q, n)) * ((q - 1)) / ((Math.Pow(q, n)) - 1));
+
+                                            for (i = 1; i < 241; i++)
+                                            {
+                                                kapital3[1] = s;
+                                                odsetki3[1] = kapital3[1] * r / 100 / 12;
+                                                ratakapitalowa3[1] = rata - odsetki3[1];
+
+                                                kapital3[i + 1] = kapital3[i] - ratakapitalowa3[i];
+                                                odsetki3[i + 1] = kapital3[i + 1] * r / 100 / 12;
+                                                ratakapitalowa3[i + 1] = rata - odsetki3[i + 1];
+
+                                                odsetki += odsetki3[i];
+
+                                                rata = Math.Round(rata, 2);
+                                                kapital3[i] = Math.Round(kapital3[i], 2);
+                                                odsetki3[i] = Math.Round(odsetki3[i], 2);
+                                                ratakapitalowa3[i] = Math.Round(ratakapitalowa3[i], 2);
+
+                                                kalkulator.Rows.Add(i, kapital3[i]+"zł", ratakapitalowa3[i]+"zł", odsetki3[i]+"zł", rata+"zł");
+                                            }
+                                            f2.dataGridView1.DataSource = kalkulator.DefaultView;
+                                            s = s + odsetki;
+                                            s = Math.Round(s, 2);
+                                            prowizja = Math.Round(prowizja, 2);
+                                            f2.KosztKredytu1.Text = s.ToString()+"zł";
+                                            f2.Prowizja1.Text = prowizja.ToString()+"zł";
+                                        }
+
+                                        f2.BringToFront();
+                                        f2.Show();
+                                    }
+                                    else if(radioButtonMalejace.Checked) 
+                                    {
+                                        f2.RodzajRat.Text = radioButtonMalejace.Text;
+
+                                        DataTable kalkulator = new DataTable();
+
+                                        kalkulator.Columns.Add("Numer raty", typeof(double));
+                                        kalkulator.Columns.Add("Kapitał", typeof(string));
+                                        kalkulator.Columns.Add("Rata kapitałowa", typeof(string));
+                                        kalkulator.Columns.Add("Odsetki", typeof(string));
+                                        kalkulator.Columns.Add("Rata", typeof(string));
+
+                                        if (comboBoxIloscRat.Text == "60 rat") 
+                                        {
+                                            s = System.Double.Parse(textBoxKwotaKredytu.Text);
+                                            n = 60;
+
+                                            prowizja = s * 0.1 + s * 0.05;
+                                            s = s + prowizja;
+
+                                            ratak = s / n;
+
+                                            for (int i = 1; i < 61; i++)
+                                            {
+                                                kapital1[1] = s;
+                                                odsetki1[1] = kapital1[1] * r / 100 / 12;
+                                                ratakapitalowa1[1] = ratak + odsetki1[1];
+
+                                                kapital1[i + 1] = kapital1[i] - ratak;
+                                                odsetki1[i + 1] = kapital1[i + 1] * r / 100 / 12;
+                                                ratakapitalowa1[i + 1] = ratak + odsetki1[i + 1];
+
+                                                odsetki += odsetki1[i];
+
+                                                ratak = Math.Round(ratak, 2);
+                                                kapital1[i] = Math.Round(kapital1[i], 2);
+                                                odsetki1[i] = Math.Round(odsetki1[i], 2);
+                                                ratakapitalowa1[i] = Math.Round(ratakapitalowa1[i], 2);
+
+                                                kalkulator.Rows.Add(i,kapital1[i]+"zł", ratak+"zł",odsetki1[i]+"zł",ratakapitalowa1[i]+"zł");
+                                            }
+                                            f2.dataGridView1.DataSource = kalkulator.DefaultView;
+                                            s = s + odsetki;
+                                            s = Math.Round(s, 2);
+                                            prowizja = Math.Round(prowizja, 2);
+                                            f2.KosztKredytu1.Text = s.ToString()+"zł";
+                                            f2.Prowizja1.Text = prowizja.ToString()+"zł";
+
+                                        }
+                                        else if(comboBoxIloscRat.Text == "120 rat")
+                                        {
+                                            s = System.Double.Parse(textBoxKwotaKredytu.Text);
+                                            n = 120;
+
+                                            prowizja = s * 0.1 + s * 0.05;
+                                            s = s + prowizja;
+
+                                            ratak = s / n;
+
+                                            for (int i = 1; i < 121; i++)
+                                            {
+                                                kapital2[1] = s;
+                                                odsetki2[1] = kapital2[1] * r / 100 / 12;
+                                                ratakapitalowa2[1] = ratak + odsetki2[1];
+
+                                                kapital2[i + 1] = kapital2[i] - ratak;
+                                                odsetki2[i + 1] = kapital2[i + 1] * r / 100 / 12;
+                                                ratakapitalowa2[i + 1] = ratak + odsetki2[i + 1];
+
+                                                odsetki += odsetki2[i];
+
+                                                ratak = Math.Round(ratak, 2);
+                                                kapital2[i] = Math.Round(kapital2[i], 2);
+                                                odsetki2[i] = Math.Round(odsetki2[i], 2);
+                                                ratakapitalowa2[i] = Math.Round(ratakapitalowa2[i], 2);
+
+                                                kalkulator.Rows.Add(i, kapital2[i]+"zł", ratak+"zł", odsetki2[i]+"zł", ratakapitalowa2[i]+"zł");
+                                            }
+                                            f2.dataGridView1.DataSource = kalkulator.DefaultView;
+                                            s = s + odsetki;
+                                            s = Math.Round(s, 2);
+                                            prowizja = Math.Round(prowizja, 2);
+                                            f2.KosztKredytu1.Text = s.ToString()+"zł";
+                                            f2.Prowizja1.Text = prowizja.ToString()+"zł";
+
+                                        }
+                                        else if(comboBoxIloscRat.Text == "240 rat") 
+                                        {
+                                            s = System.Double.Parse(textBoxKwotaKredytu.Text);
+                                            n = 240;
+
+                                            prowizja = s * 0.1 + s * 0.05;
+                                            s = s + prowizja;
+
+                                            ratak = s / n;
+
+                                            for (int i = 1; i < 241; i++)
+                                            {
+                                                kapital3[1] = s;
+                                                odsetki3[1] = kapital3[1] * r / 100 / 12;
+                                                ratakapitalowa3[1] = ratak + odsetki3[1];
+
+                                                kapital3[i + 1] = kapital3[i] - ratak;
+                                                odsetki3[i + 1] = kapital3[i + 1] * r / 100 / 12;
+                                                ratakapitalowa3[i + 1] = ratak + odsetki3[i + 1];
+
+                                                odsetki += odsetki3[i];
+
+                                                ratak = Math.Round(ratak, 2);
+                                                kapital3[i] = Math.Round(kapital3[i], 2);
+                                                odsetki3[i] = Math.Round(odsetki3[i], 2);
+                                                ratakapitalowa3[i] = Math.Round(ratakapitalowa3[i], 2);
+
+                                                kalkulator.Rows.Add(i, kapital3[i]+"zł", ratak+"zł", odsetki3[i]+"zł", ratakapitalowa3[i]+"zł");
+                                            }
+                                            f2.dataGridView1.DataSource = kalkulator.DefaultView;
+                                            s = s + odsetki;
+                                            s = Math.Round(s, 2);
+                                            prowizja = Math.Round(prowizja, 2);
+                                            f2.KosztKredytu1.Text = s.ToString()+"zł";
+                                            f2.Prowizja1.Text = prowizja.ToString()+"zł";
+                                        }
+
+                                        f2.BringToFront();
+                                        f2.Show();
+                                    }
+                                }
+                                else if(comboBoxRodzajKredytu.Text == "Kredyt mieszkaniowy (4,5%)") 
+                                {
+                                    f2.Oprocentowanie1.Text = "4,5%";
+                                    r = 4.5;
+
+                                    if (radioButtonRowne.Checked)
+                                    {
+                                        f2.RodzajRat.Text = radioButtonRowne.Text;
+
+                                        DataTable kalkulator = new DataTable();
+
+                                        kalkulator.Columns.Add("Numer raty", typeof(double));
+                                        kalkulator.Columns.Add("Kapitał", typeof(string));
+                                        kalkulator.Columns.Add("Rata kapitałowa", typeof(string));
+                                        kalkulator.Columns.Add("Odsetki", typeof(string));
+                                        kalkulator.Columns.Add("Rata", typeof(string));
+
+                                        if (comboBoxIloscRat.Text == "60 rat")
+                                        {
+                                            s = System.Double.Parse(textBoxKwotaKredytu.Text);
+                                            prowizja = s * 0.1 + s * 0.05;
+                                            s = s + prowizja;
+                                            n = 60;
+                                            q = 1 + 0.083333333333333 * r / 100;
+                                            rata = s * ((Math.Pow(q, n)) * ((q - 1)) / ((Math.Pow(q, n)) - 1));
+
+                                            for (i = 1; i < 61; i++)
+                                            {
+                                                kapital1[1] = s;
+                                                odsetki1[1] = kapital1[1] * r / 100 / 12;
+                                                ratakapitalowa1[1] = rata - odsetki1[1];
+
+                                                kapital1[i + 1] = kapital1[i] - ratakapitalowa1[i];
+                                                odsetki1[i + 1] = kapital1[i + 1] * r / 100 / 12;
+                                                ratakapitalowa1[i + 1] = rata - odsetki1[i + 1];
+
+                                                odsetki += odsetki1[i];
+
+                                                rata = Math.Round(rata, 2);
+                                                kapital1[i] = Math.Round(kapital1[i], 2);
+                                                odsetki1[i] = Math.Round(odsetki1[i], 2);
+                                                ratakapitalowa1[i] = Math.Round(ratakapitalowa1[i], 2);
+
+                                                kalkulator.Rows.Add(i, kapital1[i]+"zł", ratakapitalowa1[i]+"zł", odsetki1[i]+"zł", rata+"zł");
+                                            }
+                                            f2.dataGridView1.DataSource = kalkulator.DefaultView;
+                                            s = s + odsetki;
+                                            s = Math.Round(s, 2);
+                                            prowizja = Math.Round(prowizja, 2);
+                                            f2.KosztKredytu1.Text = s.ToString()+"zł";
+                                            f2.Prowizja1.Text = prowizja.ToString()+"zł";
+                                        }
+                                        else if (comboBoxIloscRat.Text == "120 rat")
+                                        {
+                                            s = System.Double.Parse(textBoxKwotaKredytu.Text);
+                                            prowizja = s * 0.1 + s * 0.05;
+                                            s = s + prowizja;
+                                            n = 120;
+                                            q = 1 + 0.083333333333333 * r / 100;
+                                            rata = s * ((Math.Pow(q, n)) * ((q - 1)) / ((Math.Pow(q, n)) - 1));
+
+                                            for (i = 1; i < 121; i++)
+                                            {
+                                                kapital2[1] = s;
+                                                odsetki2[1] = kapital2[1] * r / 100 / 12;
+                                                ratakapitalowa2[1] = rata - odsetki2[1];
+
+                                                kapital2[i + 1] = kapital2[i] - ratakapitalowa2[i];
+                                                odsetki2[i + 1] = kapital2[i + 1] * r / 100 / 12;
+                                                ratakapitalowa2[i + 1] = rata - odsetki2[i + 1];
+
+                                                odsetki += odsetki2[i];
+
+                                                rata = Math.Round(rata, 2);
+                                                kapital2[i] = Math.Round(kapital2[i], 2);
+                                                odsetki2[i] = Math.Round(odsetki2[i], 2);
+                                                ratakapitalowa2[i] = Math.Round(ratakapitalowa2[i], 2);
+
+                                                kalkulator.Rows.Add(i, kapital2[i]+"zł", ratakapitalowa2[i]+"zł", odsetki2[i]+"zł", rata+"zł");
+                                            }
+                                            f2.dataGridView1.DataSource = kalkulator.DefaultView;
+                                            s = s + odsetki;
+                                            s = Math.Round(s, 2);
+                                            prowizja = Math.Round(prowizja, 2);
+                                            f2.KosztKredytu1.Text = s.ToString()+"zł";
+                                            f2.Prowizja1.Text = prowizja.ToString()+"zł";
+                                        }
+                                        else if (comboBoxIloscRat.Text == "240 rat")
+                                        {
+                                            s = System.Double.Parse(textBoxKwotaKredytu.Text);
+                                            prowizja = s * 0.1 + s * 0.05;
+                                            s = s + prowizja;
+                                            n = 240;
+                                            q = 1 + 0.083333333333333 * r / 100;
+                                            rata = s * ((Math.Pow(q, n)) * ((q - 1)) / ((Math.Pow(q, n)) - 1));
+
+                                            for (i = 1; i < 241; i++)
+                                            {
+                                                kapital3[1] = s;
+                                                odsetki3[1] = kapital3[1] * r / 100 / 12;
+                                                ratakapitalowa3[1] = rata - odsetki3[1];
+
+                                                kapital3[i + 1] = kapital3[i] - ratakapitalowa3[i];
+                                                odsetki3[i + 1] = kapital3[i + 1] * r / 100 / 12;
+                                                ratakapitalowa3[i + 1] = rata - odsetki3[i + 1];
+
+                                                odsetki += odsetki3[i];
+
+                                                rata = Math.Round(rata, 2);
+                                                kapital3[i] = Math.Round(kapital3[i], 2);
+                                                odsetki3[i] = Math.Round(odsetki3[i], 2);
+                                                ratakapitalowa3[i] = Math.Round(ratakapitalowa3[i], 2);
+
+                                                kalkulator.Rows.Add(i, kapital3[i]+"zł", ratakapitalowa3[i]+"zł", odsetki3[i]+"zł", rata+"zł");
+                                            }
+                                            f2.dataGridView1.DataSource = kalkulator.DefaultView;
+                                            s = s + odsetki;
+                                            s = Math.Round(s, 2);
+                                            prowizja = Math.Round(prowizja, 2);
+                                            f2.KosztKredytu1.Text = s.ToString()+"zł";
+                                            f2.Prowizja1.Text = prowizja.ToString()+"zł";
+                                        }
+
+                                        f2.BringToFront();
+                                        f2.Show();
+                                    }
+                                    else if (radioButtonMalejace.Checked)
+                                    {
+                                        f2.RodzajRat.Text = radioButtonMalejace.Text;
+
+                                        DataTable kalkulator = new DataTable();
+
+                                        kalkulator.Columns.Add("Numer raty", typeof(double));
+                                        kalkulator.Columns.Add("Kapitał", typeof(string));
+                                        kalkulator.Columns.Add("Rata kapitałowa", typeof(string));
+                                        kalkulator.Columns.Add("Odsetki", typeof(string));
+                                        kalkulator.Columns.Add("Rata", typeof(string));
+
+                                        if (comboBoxIloscRat.Text == "60 rat") 
+                                        {
+                                            s = System.Double.Parse(textBoxKwotaKredytu.Text);
+                                            n = 60;
+
+                                            prowizja = s * 0.1 + s * 0.05;
+                                            s = s + prowizja;
+
+                                            ratak = s / n;
+
+                                            for (int i = 1; i < 61; i++)
+                                            {
+                                                kapital1[1] = s;
+                                                odsetki1[1] = kapital1[1] * r / 100 / 12;
+                                                ratakapitalowa1[1] = ratak + odsetki1[1];
+
+                                                kapital1[i + 1] = kapital1[i] - ratak;
+                                                odsetki1[i + 1] = kapital1[i + 1] * r / 100 / 12;
+                                                ratakapitalowa1[i + 1] = ratak + odsetki1[i + 1];
+
+                                                odsetki += odsetki1[i];
+
+                                                ratak = Math.Round(ratak, 2);
+                                                kapital1[i] = Math.Round(kapital1[i], 2);
+                                                odsetki1[i] = Math.Round(odsetki1[i], 2);
+                                                ratakapitalowa1[i] = Math.Round(ratakapitalowa1[i], 2);
+
+                                                kalkulator.Rows.Add(i, kapital1[i]+"zł", ratak+"zł", odsetki1[i]+"zł", ratakapitalowa1[i]+"zł");
+                                            }
+                                            f2.dataGridView1.DataSource = kalkulator.DefaultView;
+                                            s = s + odsetki;
+                                            s = Math.Round(s, 2);
+                                            prowizja = Math.Round(prowizja, 2);
+                                            f2.KosztKredytu1.Text = s.ToString()+"zł";
+                                            f2.Prowizja1.Text = prowizja.ToString()+"zł";
+                                        }
+                                        else if(comboBoxIloscRat.Text == "120 rat") 
+                                        {
+                                            s = System.Double.Parse(textBoxKwotaKredytu.Text);
+                                            n = 120;
+
+                                            prowizja = s * 0.1 + s * 0.05;
+                                            s = s + prowizja;
+
+                                            ratak = s / n;
+
+                                            for (int i = 1; i < 121; i++)
+                                            {
+                                                kapital2[1] = s;
+                                                odsetki2[1] = kapital2[1] * r / 100 / 12;
+                                                ratakapitalowa2[1] = ratak + odsetki2[1];
+
+                                                kapital2[i + 1] = kapital2[i] - ratak;
+                                                odsetki2[i + 1] = kapital2[i + 1] * r / 100 / 12;
+                                                ratakapitalowa2[i + 1] = ratak + odsetki2[i + 1];
+
+                                                odsetki += odsetki2[i];
+
+                                                ratak = Math.Round(ratak, 2);
+                                                kapital2[i] = Math.Round(kapital2[i], 2);
+                                                odsetki2[i] = Math.Round(odsetki2[i], 2);
+                                                ratakapitalowa2[i] = Math.Round(ratakapitalowa2[i], 2);
+
+                                                kalkulator.Rows.Add(i, kapital2[i]+"zł", ratak+"zł", odsetki2[i]+"zł", ratakapitalowa2[i]+"zł");
+                                            }
+                                            f2.dataGridView1.DataSource = kalkulator.DefaultView;
+                                            s = s + odsetki;
+                                            s = Math.Round(s, 2);
+                                            prowizja = Math.Round(prowizja, 2);
+                                            f2.KosztKredytu1.Text = s.ToString()+"zł";
+                                            f2.Prowizja1.Text = prowizja.ToString()+"zł";
+                                        }
+                                        else if(comboBoxIloscRat.Text == "240 rat") 
+                                        {
+                                            s = System.Double.Parse(textBoxKwotaKredytu.Text);
+                                            n = 240;
+
+                                            prowizja = s * 0.1 + s * 0.05;
+                                            s = s + prowizja;
+
+                                            ratak = s / n;
+
+                                            for (int i = 1; i < 241; i++)
+                                            {
+                                                kapital3[1] = s;
+                                                odsetki3[1] = kapital3[1] * r / 100 / 12;
+                                                ratakapitalowa3[1] = ratak + odsetki3[1];
+
+                                                kapital3[i + 1] = kapital3[i] - ratak;
+                                                odsetki3[i + 1] = kapital3[i + 1] * r / 100 / 12;
+                                                ratakapitalowa3[i + 1] = ratak + odsetki3[i + 1];
+
+                                                odsetki += odsetki3[i];
+
+                                                ratak = Math.Round(ratak, 2);
+                                                kapital3[i] = Math.Round(kapital3[i], 2);
+                                                odsetki3[i] = Math.Round(odsetki3[i], 2);
+                                                ratakapitalowa3[i] = Math.Round(ratakapitalowa3[i], 2);
+
+                                                kalkulator.Rows.Add(i, kapital3[i]+"zł", ratak+"zł", odsetki3[i]+"zł", ratakapitalowa3[i]+"zł");
+                                            }
+                                            f2.dataGridView1.DataSource = kalkulator.DefaultView;
+                                            s = s + odsetki;
+                                            s = Math.Round(s, 2);
+                                            prowizja = Math.Round(prowizja, 2);
+                                            f2.KosztKredytu1.Text = s.ToString()+"zł";
+                                            f2.Prowizja1.Text = prowizja.ToString()+"zł";
+                                        }
+
+                                        f2.BringToFront();
+                                        f2.Show();
+                                    }
+                                }
+                                else if(comboBoxRodzajKredytu.Text == "Kredyt samochodowy (3,5%)") 
+                                {
+                                    f2.Oprocentowanie1.Text = "3,5%";
+                                    r = 3.5;
+
+                                    if (radioButtonRowne.Checked)
+                                    {
+                                        f2.RodzajRat.Text = radioButtonRowne.Text;
+
+                                        DataTable kalkulator = new DataTable();
+
+                                        kalkulator.Columns.Add("Numer raty", typeof(double));
+                                        kalkulator.Columns.Add("Kapitał", typeof(string));
+                                        kalkulator.Columns.Add("Rata kapitałowa", typeof(string));
+                                        kalkulator.Columns.Add("Odsetki", typeof(string));
+                                        kalkulator.Columns.Add("Rata", typeof(string));
+
+                                        if (comboBoxIloscRat.Text == "60 rat")
+                                        {
+                                            s = System.Double.Parse(textBoxKwotaKredytu.Text);
+                                            prowizja = s * 0.1 + s * 0.05;
+                                            s = s + prowizja;
+                                            n = 60;
+                                            q = 1 + 0.083333333333333 * r / 100;
+                                            rata = s * ((Math.Pow(q, n)) * ((q - 1)) / ((Math.Pow(q, n)) - 1));
+
+                                            for (i = 1; i < 61; i++)
+                                            {
+                                                kapital1[1] = s;
+                                                odsetki1[1] = kapital1[1] * r / 100 / 12;
+                                                ratakapitalowa1[1] = rata - odsetki1[1];
+
+                                                kapital1[i + 1] = kapital1[i] - ratakapitalowa1[i];
+                                                odsetki1[i + 1] = kapital1[i + 1] * r / 100 / 12;
+                                                ratakapitalowa1[i + 1] = rata - odsetki1[i + 1];
+
+                                                odsetki += odsetki1[i];
+
+                                                rata = Math.Round(rata, 2);
+                                                kapital1[i] = Math.Round(kapital1[i], 2);
+                                                odsetki1[i] = Math.Round(odsetki1[i], 2);
+                                                ratakapitalowa1[i] = Math.Round(ratakapitalowa1[i], 2);
+
+                                                kalkulator.Rows.Add(i, kapital1[i]+"zł", ratakapitalowa1[i]+"zł", odsetki1[i]+"zł", rata+"zł");
+                                            }
+                                            f2.dataGridView1.DataSource = kalkulator.DefaultView;
+                                            s = s + odsetki;
+                                            s = Math.Round(s, 2);
+                                            prowizja = Math.Round(prowizja, 2);
+                                            f2.KosztKredytu1.Text = s.ToString()+"zł";
+                                            f2.Prowizja1.Text = prowizja.ToString()+"zł";
+                                        }
+                                        else if (comboBoxIloscRat.Text == "120 rat")
+                                        {
+                                            s = System.Double.Parse(textBoxKwotaKredytu.Text);
+                                            prowizja = s * 0.1 + s * 0.05;
+                                            s = s + prowizja;
+                                            n = 120;
+                                            q = 1 + 0.083333333333333 * r / 100;
+                                            rata = s * ((Math.Pow(q, n)) * ((q - 1)) / ((Math.Pow(q, n)) - 1));
+
+                                            for (i = 1; i < 121; i++)
+                                            {
+                                                kapital2[1] = s;
+                                                odsetki2[1] = kapital2[1] * r / 100 / 12;
+                                                ratakapitalowa2[1] = rata - odsetki2[1];
+
+                                                kapital2[i + 1] = kapital2[i] - ratakapitalowa2[i];
+                                                odsetki2[i + 1] = kapital2[i + 1] * r / 100 / 12;
+                                                ratakapitalowa2[i + 1] = rata - odsetki2[i + 1];
+
+                                                odsetki += odsetki2[i];
+
+                                                rata = Math.Round(rata, 2);
+                                                kapital2[i] = Math.Round(kapital2[i], 2);
+                                                odsetki2[i] = Math.Round(odsetki2[i], 2);
+                                                ratakapitalowa2[i] = Math.Round(ratakapitalowa2[i], 2);
+
+                                                kalkulator.Rows.Add(i, kapital2[i]+"zł", ratakapitalowa2[i]+"zł", odsetki2[i]+"zł", rata+"zł");
+                                            }
+                                            f2.dataGridView1.DataSource = kalkulator.DefaultView;
+                                            s = s + odsetki;
+                                            s = Math.Round(s, 2);
+                                            prowizja = Math.Round(prowizja, 2);
+                                            f2.KosztKredytu1.Text = s.ToString()+"zł";
+                                            f2.Prowizja1.Text = prowizja.ToString()+"zł";
+                                        }
+                                        else if (comboBoxIloscRat.Text == "240 rat")
+                                        {
+                                            s = System.Double.Parse(textBoxKwotaKredytu.Text);
+                                            prowizja = s * 0.1 + s * 0.05;
+                                            s = s + prowizja;
+                                            n = 240;
+                                            q = 1 + 0.083333333333333 * r / 100;
+                                            rata = s * ((Math.Pow(q, n)) * ((q - 1)) / ((Math.Pow(q, n)) - 1));
+
+                                            for (i = 1; i < 241; i++)
+                                            {
+                                                kapital3[1] = s;
+                                                odsetki3[1] = kapital3[1] * r / 100 / 12;
+                                                ratakapitalowa3[1] = rata - odsetki3[1];
+
+                                                kapital3[i + 1] = kapital3[i] - ratakapitalowa3[i];
+                                                odsetki3[i + 1] = kapital3[i + 1] * r / 100 / 12;
+                                                ratakapitalowa3[i + 1] = rata - odsetki3[i + 1];
+
+                                                odsetki += odsetki3[i];
+
+                                                rata = Math.Round(rata, 2);
+                                                kapital3[i] = Math.Round(kapital3[i], 2);
+                                                odsetki3[i] = Math.Round(odsetki3[i], 2);
+                                                ratakapitalowa3[i] = Math.Round(ratakapitalowa3[i], 2);
+
+                                                kalkulator.Rows.Add(i, kapital3[i]+"zł", ratakapitalowa3[i]+"zł", odsetki3[i]+"zł", rata+"zł");
+                                            }
+                                            f2.dataGridView1.DataSource = kalkulator.DefaultView;
+                                            s = s + odsetki;
+                                            s = Math.Round(s, 2);
+                                            prowizja = Math.Round(prowizja, 2);
+                                            f2.KosztKredytu1.Text = s.ToString()+"zł";
+                                            f2.Prowizja1.Text = prowizja.ToString()+"zł";
+                                        }
+
+                                        f2.BringToFront();
+                                        f2.Show();
+                                    }
+                                    else if (radioButtonMalejace.Checked)
+                                    {
+                                        f2.RodzajRat.Text = radioButtonMalejace.Text;
+
+                                        DataTable kalkulator = new DataTable();
+
+                                        kalkulator.Columns.Add("Numer raty", typeof(double));
+                                        kalkulator.Columns.Add("Kapitał", typeof(string));
+                                        kalkulator.Columns.Add("Rata kapitałowa", typeof(string));
+                                        kalkulator.Columns.Add("Odsetki", typeof(string));
+                                        kalkulator.Columns.Add("Rata", typeof(string));
+
+                                        if(comboBoxIloscRat.Text == "60 rat") 
+                                        {
+                                            s = System.Double.Parse(textBoxKwotaKredytu.Text);
+                                            n = 60;
+
+                                            prowizja = s * 0.1 + s * 0.05;
+                                            s = s + prowizja;
+
+                                            ratak = s / n;
+
+                                            for (int i = 1; i < 61; i++)
+                                            {
+                                                kapital1[1] = s;
+                                                odsetki1[1] = kapital1[1] * r / 100 / 12;
+                                                ratakapitalowa1[1] = ratak + odsetki1[1];
+
+                                                kapital1[i + 1] = kapital1[i] - ratak;
+                                                odsetki1[i + 1] = kapital1[i + 1] * r / 100 / 12;
+                                                ratakapitalowa1[i + 1] = ratak + odsetki1[i + 1];
+
+                                                odsetki += odsetki1[i];
+
+                                                ratak = Math.Round(ratak, 2);
+                                                kapital1[i] = Math.Round(kapital1[i], 2);
+                                                odsetki1[i] = Math.Round(odsetki1[i], 2);
+                                                ratakapitalowa1[i] = Math.Round(ratakapitalowa1[i], 2);
+
+                                                kalkulator.Rows.Add(i, kapital1[i]+"zł", ratak+"zł", odsetki1[i]+"zł", ratakapitalowa1[i]+"zł");
+                                            }
+                                            f2.dataGridView1.DataSource = kalkulator.DefaultView;
+                                            s = s + odsetki;
+                                            s = Math.Round(s, 2);
+                                            prowizja = Math.Round(prowizja, 2);
+                                            f2.KosztKredytu1.Text = s.ToString()+"zł";
+                                            f2.Prowizja1.Text = prowizja.ToString()+"zł";
+                                        }
+                                        else if(comboBoxIloscRat.Text == "120 rat") 
+                                        {
+                                            s = System.Double.Parse(textBoxKwotaKredytu.Text);
+                                            n = 120;
+
+                                            prowizja = s * 0.1 + s * 0.05;
+                                            s = s + prowizja;
+
+                                            ratak = s / n;
+
+                                            for (int i = 1; i < 121; i++)
+                                            {
+                                                kapital2[1] = s;
+                                                odsetki2[1] = kapital2[1] * r / 100 / 12;
+                                                ratakapitalowa2[1] = ratak + odsetki2[1];
+
+                                                kapital2[i + 1] = kapital2[i] - ratak;
+                                                odsetki2[i + 1] = kapital2[i + 1] * r / 100 / 12;
+                                                ratakapitalowa2[i + 1] = ratak + odsetki2[i + 1];
+
+                                                odsetki += odsetki2[i];
+
+                                                ratak = Math.Round(ratak, 2);
+                                                kapital2[i] = Math.Round(kapital2[i], 2);
+                                                odsetki2[i] = Math.Round(odsetki2[i], 2);
+                                                ratakapitalowa2[i] = Math.Round(ratakapitalowa2[i], 2);
+
+                                                kalkulator.Rows.Add(i, kapital2[i]+"zł", ratak+"zł", odsetki2[i]+"zł", ratakapitalowa2[i]+"zł");
+                                            }
+                                            f2.dataGridView1.DataSource = kalkulator.DefaultView;
+                                            s = s + odsetki;
+                                            s = Math.Round(s, 2);
+                                            prowizja = Math.Round(prowizja, 2);
+                                            f2.KosztKredytu1.Text = s.ToString()+"zł";
+                                            f2.Prowizja1.Text = prowizja.ToString()+"zł";
+                                        }
+                                        else if(comboBoxIloscRat.Text == "240 rat") 
+                                        {
+                                            s = System.Double.Parse(textBoxKwotaKredytu.Text);
+                                            n = 240;
+
+                                            prowizja = s * 0.1 + s * 0.05;
+                                            s = s + prowizja;
+
+                                            ratak = s / n;
+
+                                            for (int i = 1; i < 241; i++)
+                                            {
+                                                kapital3[1] = s;
+                                                odsetki3[1] = kapital3[1] * r / 100 / 12;
+                                                ratakapitalowa3[1] = ratak + odsetki3[1];
+
+                                                kapital3[i + 1] = kapital3[i] - ratak;
+                                                odsetki3[i + 1] = kapital3[i + 1] * r / 100 / 12;
+                                                ratakapitalowa3[i + 1] = ratak + odsetki3[i + 1];
+
+                                                odsetki += odsetki3[i];
+
+                                                ratak = Math.Round(ratak, 2);
+                                                kapital3[i] = Math.Round(kapital3[i], 2);
+                                                odsetki3[i] = Math.Round(odsetki3[i], 2);
+                                                ratakapitalowa3[i] = Math.Round(ratakapitalowa3[i], 2);
+
+                                                kalkulator.Rows.Add(i, kapital3[i]+"zł", ratak+"zł", odsetki3[i]+"zł", ratakapitalowa3[i]+"zł");
+                                            }
+                                            f2.dataGridView1.DataSource = kalkulator.DefaultView;
+                                            s = s + odsetki;
+                                            s = Math.Round(s, 2);
+                                            prowizja = Math.Round(prowizja, 2);
+                                            f2.KosztKredytu1.Text = s.ToString()+"zł";
+                                            f2.Prowizja1.Text = prowizja.ToString()+"zł";
+                                        }
+
+                                        f2.BringToFront();
+                                        f2.Show();
+                                    }
+                                }
+                            }
+                            else 
+                            {
+                                MessageBox.Show("Rodzaj rat nie został wybrany. Wybierz z podanych.", "Błąd rodzaj rat", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
