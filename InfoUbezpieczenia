@@ -1,0 +1,85 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Drawing;
+using System.Data;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Data.SqlClient;
+
+namespace BankPraca
+{
+    public partial class InfoUbezpieczenia : UserControl
+    {
+        public static string pesel;
+
+        public InfoUbezpieczenia()
+        {
+            InitializeComponent();
+        }
+
+        private void comboBoxRodzajUbezpieczenia_KeyUp(object sender, KeyEventArgs e)
+        {
+            comboBoxRodzajUbezpieczenia.SelectedItem = "Wybierz";
+            MessageBox.Show("Źle wprowadzone. Wybierz z listy", "Błąd rodzaj ubezpieczenia", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+
+        private void Pobierzdane(string sql)
+        {
+
+            SqlConnection polaczenie = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\Monika\Desktop\BankPraca\BazaBank.mdf;Integrated Security=True;Connect Timeout=30");
+            polaczenie.Open();
+            using (SqlCommand sel = new SqlCommand(sql, polaczenie))
+            {
+                DataTable dt = new DataTable();
+                SqlDataAdapter da = new SqlDataAdapter(sel);
+                da.Fill(dt);
+                dataGridView1.DataSource = dt.DefaultView;
+            }
+
+        }
+
+        private void buttonSzukaj_Click(object sender, EventArgs e)
+        {
+            SqlConnection con = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\Monika\Desktop\BankPraca\BazaBank.mdf;Integrated Security=True;Connect Timeout=30");
+            con.Open();
+            SqlDataAdapter sda = new SqlDataAdapter("SELECT Count(*) From Logowanie Where PESEL = '" + StalyLogowanie.pesel + "' AND Ubezpieczenie = 'TAK'", con);
+            DataTable da = new DataTable();
+            sda.Fill(da);
+            if (da.Rows[0][0].ToString() == "1")
+            {
+                if(comboBoxRodzajUbezpieczenia.Text == "Wybierz") 
+                {
+                    string sql = "SELECT NumerUbezpieczenia, RodzajUbezpieczenia, Stan FROM InfoUbezpieczenia WHERE PESEL = '" + StalyLogowanie.pesel + "' ";
+                    Pobierzdane(sql);
+                }
+                else 
+                {
+                    string sql = "SELECT NumerUbezpieczenia, RodzajUbezpieczenia, Stan FROM InfoUbezpieczenia WHERE PESEL = '" + StalyLogowanie.pesel + "' AND RodzajUbezpieczenia = '"+comboBoxRodzajUbezpieczenia.Text+"' ";
+                    Pobierzdane(sql);
+                }
+            }
+            else
+            {
+                MessageBox.Show("Nie posiadasz żadnego ubezpieczenia dla danego numeru PESEL.", "Brak ubezpieczenia", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            con.Close();
+        }
+
+        private void dataGridView1_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
+        {
+            Informacje f2 = new Informacje();
+            f2.Usluga.Text = "Rodzaj ubezpieczenia:";
+            f2.Kwota.Text = "Stan ubezpieczenia:";
+            f2.Rodzaj.Text = dataGridView1.CurrentRow.Cells[1].Value.ToString();
+            f2.Wysokosc.Text = dataGridView1.CurrentRow.Cells[2].Value.ToString();
+            pesel = StalyLogowanie.pesel;
+            Informacje.PESEL = pesel;
+
+            f2.BringToFront();
+            f2.Show();
+        }
+    }
+}
