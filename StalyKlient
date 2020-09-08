@@ -1,0 +1,278 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+
+namespace BankPraca
+{
+    public partial class Stalyklient : Form
+    {
+        public Stalyklient()
+        {
+            InitializeComponent();
+
+            panel3.Height = Programb.Height;
+            panel3.Top = Programb.Top;
+
+            KontoMenu.Visible = false;
+            KredytMenu.Visible = false;
+            PozyczkaMenu.Visible = false;
+            LokataMenu.Visible = false;
+            ProgramMenu.BringToFront();
+            ProgramMenu.Visible = true;
+ 
+            StalyProgram.BringToFront();
+            StalyProgram.Visible = true;
+            StalyKonto.Visible = false;
+            StalyKredyt.Visible = false;
+            StalyPożyczka.Visible = false;
+            StalyLokata.Visible = false;
+
+            infoKonto1.Visible = false;
+            infoKredyty1.Visible = false;
+            infoPozyczki1.Visible = false;
+            infoLokaty1.Visible = false;
+
+            transakcjeKonto1.Visible = false;
+            kontrolaWydatkowKonto1.Visible = false;
+            wplataKonto1.Visible = false;
+            przelewKonto1.Visible = false;
+            opcjeKonta1.Visible = false;
+            zamkniecieKonta1.Visible = false;
+
+            wplataKredyt1.Visible = false;
+            opcjeKredytow1.Visible = false;
+            kalkulatorKredytowy1.Visible = false;
+            kalkulatorZdolnosciKredytowej1.Visible = false;
+            wniosekKredyt1.Visible = false;
+
+            wplataPozyczka1.Visible = false;
+            opcjePozyczek1.Visible = false;
+            kalkulatorPozyczka1.Visible = false;
+            wniosekPozyczka1.Visible = false;
+
+            wplataLokata1.Visible = false;
+            opcjeLokata1.Visible = false;
+            kalkulatorLokata1.Visible = false;
+            wniosekLokata1.Visible = false;
+
+            oProgramie1.Visible = false;
+            oAutorach1.Visible = false;
+  
+        }
+
+        private void Cofnij_Click(object sender, EventArgs e)
+        {
+            panel3.Height = Wylogujb.Height;
+            panel3.Top = Wylogujb.Top;
+            this.Hide();
+            Startowa start = new Startowa();
+            start.Show();
+        }
+
+        private void Konto_Click(object sender, EventArgs e)
+        {
+            panel3.Height = Kontob.Height;
+            panel3.Top = Kontob.Top;
+            StalyKonto.Visible = true;
+            StalyKonto.BringToFront();
+            KontoMenu.Visible = true;
+            KontoMenu.BringToFront();
+        }
+
+        private void Kredyt_Click(object sender, EventArgs e)
+        {
+            panel3.Height = Kredytb.Height;
+            panel3.Top = Kredytb.Top;
+            StalyKredyt.Visible = true;
+            StalyKredyt.BringToFront();
+            KredytMenu.Visible = true;
+            KredytMenu.BringToFront();
+        }
+
+        private void Programb_Click(object sender, EventArgs e)
+        {
+            panel3.Height = Programb.Height;
+            panel3.Top = Programb.Top;
+            StalyProgram.BringToFront();
+            ProgramMenu.Visible = true;
+            ProgramMenu.BringToFront();
+        }
+
+        private void Pozyczkab_Click(object sender, EventArgs e)
+        {
+            panel3.Height = Pozyczkab.Height;
+            panel3.Top = Pozyczkab.Top;
+            StalyPożyczka.Visible = true;
+            StalyPożyczka.BringToFront();
+            PozyczkaMenu.Visible = true;
+            PozyczkaMenu.BringToFront();
+        }
+
+        private void Lokatab_Click(object sender, EventArgs e)
+        {
+            panel3.Height = Lokatab.Height;
+            panel3.Top = Lokatab.Top;
+            StalyLokata.Visible = true;
+            StalyLokata.BringToFront();
+            LokataMenu.Visible = true;
+            LokataMenu.BringToFront();
+        }
+
+        private void buttonOprogramie_Click(object sender, EventArgs e)
+        {
+            oProgramie1.BringToFront();
+            oProgramie1.Visible = true;
+        }
+        
+        private void buttonOkoncie_Click(object sender, EventArgs e)
+        {
+            infoKonto1.BringToFront();
+            infoKonto1.Visible = true;
+        }
+
+        private void buttonHistoria_Click(object sender, EventArgs e)
+        {
+            transakcjeKonto1.BringToFront();
+            transakcjeKonto1.Visible = true;
+        }
+
+        private void buttonKontrolawydatkow_Click(object sender, EventArgs e)
+        {
+            kontrolaWydatkowKonto1.BringToFront();
+            kontrolaWydatkowKonto1.Visible = true;
+        }
+
+        private void buttonWplatakonto_Click(object sender, EventArgs e)
+        {
+            wplataKonto1.BringToFront();
+            wplataKonto1.Visible = true;
+        }
+
+        private void buttonPrzelew_Click(object sender, EventArgs e)
+        {
+            przelewKonto1.BringToFront();
+            przelewKonto1.Visible = true;
+        }
+
+        private void buttonOpcjeKonto_Click(object sender, EventArgs e)
+        {
+            opcjeKonta1.BringToFront();
+            opcjeKonta1.Visible = true;
+        }
+
+        private void buttonZamknieciekonta_Click(object sender, EventArgs e)
+        {
+            zamkniecieKonta1.BringToFront();
+            zamkniecieKonta1.Visible = true;
+        }
+
+        private void buttonOkredytach_Click(object sender, EventArgs e)
+        {
+            infoKredyty1.BringToFront();
+            infoKredyty1.Visible = true;
+        }
+
+        private void buttonWplataraty_Click(object sender, EventArgs e)
+        {
+            wplataKredyt1.BringToFront();
+            wplataKredyt1.Visible = true;
+        }
+
+        private void buttonOpcjekredytow_Click(object sender, EventArgs e)
+        {
+            opcjeKredytow1.BringToFront();
+            opcjeKredytow1.Visible = true;
+        }
+
+        private void buttonKalkulatorzdolnoscikredytowej_Click(object sender, EventArgs e)
+        {
+            
+            kalkulatorZdolnosciKredytowej1.BringToFront();
+            kalkulatorZdolnosciKredytowej1.Visible = true;
+        }
+
+        private void buttonKalkulatorkredytowy_Click(object sender, EventArgs e)
+        {
+            kalkulatorKredytowy1.BringToFront();
+            kalkulatorKredytowy1.Visible = true;
+        }
+
+        private void buttonWniosekokredyt_Click(object sender, EventArgs e)
+        {
+            wniosekKredyt1.BringToFront();
+            wniosekKredyt1.Visible = true;
+        }
+
+        private void buttonOpozyczkach_Click(object sender, EventArgs e)
+        {
+            infoPozyczki1.BringToFront();
+            infoPozyczki1.Visible = true;
+        }
+
+        private void buttonSplatapozyczki_Click(object sender, EventArgs e)
+        {
+            wplataPozyczka1.BringToFront();
+            wplataPozyczka1.Visible = true;
+        }
+
+        private void buttonOpcjepozyczek_Click(object sender, EventArgs e)
+        {
+            opcjePozyczek1.BringToFront();
+            opcjePozyczek1.Visible = true;
+        }
+
+        private void buttonKalkulatorpozyczkowy_Click(object sender, EventArgs e)
+        {
+            kalkulatorPozyczka1.BringToFront();
+            kalkulatorPozyczka1.Visible = true;
+        }
+
+        private void buttonWniosekopozyczke_Click(object sender, EventArgs e)
+        {
+            wniosekPozyczka1.BringToFront();
+            wniosekPozyczka1.Visible = true;
+        }
+
+        private void buttonOlokatach_Click(object sender, EventArgs e)
+        {
+            infoLokaty1.BringToFront();
+            infoLokaty1.Visible = true;
+        }
+
+        private void buttonWplatalokata_Click(object sender, EventArgs e)
+        {
+            wplataLokata1.BringToFront();
+            wplataLokata1.Visible = true;
+        }
+
+        private void buttonOpcjelokat_Click(object sender, EventArgs e)
+        {
+            opcjeLokata1.BringToFront();
+            opcjeLokata1.Visible = true;
+        }
+
+        private void buttonKalkulatorlokat_Click(object sender, EventArgs e)
+        {
+            kalkulatorLokata1.BringToFront();
+            kalkulatorLokata1.Visible = true;
+        }
+
+        private void buttonWniosekolokate_Click(object sender, EventArgs e)
+        {
+            wniosekLokata1.BringToFront();
+            wniosekLokata1.Visible = true;
+        }
+
+        private void buttonOautorach_Click(object sender, EventArgs e)
+        {
+            oAutorach1.BringToFront();
+            oAutorach1.Visible = true;
+        }
+    }
+}
