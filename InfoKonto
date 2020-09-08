@@ -1,0 +1,68 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Drawing;
+using System.Data;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Data.SqlClient;
+
+namespace BankPraca
+{
+    public partial class InfoKonto : UserControl
+    {
+        public InfoKonto()
+        {
+            InitializeComponent();
+        }
+
+        private void comboBoxRodzajKonta_KeyUp(object sender, KeyEventArgs e)
+        {
+            comboBoxRodzajKonta.SelectedItem = "Wybierz";
+            MessageBox.Show("Źle wprowadzone. Wybierz z listy", "Błąd rodzaj konta", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+
+        private void Pobierzdane(string sql)
+        {
+
+            SqlConnection polaczenie = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\Monika\Desktop\BankPraca\BazaBank.mdf;Integrated Security=True;Connect Timeout=30");
+            polaczenie.Open();
+            using (SqlCommand sel = new SqlCommand(sql, polaczenie))
+            {
+                DataTable dt = new DataTable();
+                SqlDataAdapter da = new SqlDataAdapter(sel);
+                da.Fill(dt);
+                dataGridView1.DataSource = dt.DefaultView;
+            }
+
+        }
+
+        private void buttonSzukaj_Click(object sender, EventArgs e)
+        {
+            if (comboBoxRodzajKonta.Text == "Wybierz")
+            {
+                MessageBox.Show("Rodzaj konta nie został podany. Wybierz z listy.", "Błąd rodzaj konta", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+            else
+            {
+                SqlConnection con = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\Monika\Desktop\BankPraca\BazaBank.mdf;Integrated Security=True;Connect Timeout=30");
+                con.Open();
+                SqlDataAdapter sda = new SqlDataAdapter("SELECT Count(*) From InfoKonto Where PESEL = '" + StalyLogowanie.pesel + "' AND RodzajKonta = '" + comboBoxRodzajKonta.Text + "'", con);
+                DataTable da = new DataTable();
+                sda.Fill(da);
+                if (da.Rows[0][0].ToString() == "1")
+                {
+                    string sql = "SELECT NumerKonta, RodzajKonta, StanKonta FROM InfoKonto WHERE PESEL = '" + StalyLogowanie.pesel + "' AND RodzajKonta = '"+comboBoxRodzajKonta.Text+"' ";
+                    Pobierzdane(sql);
+                }
+                else 
+                {
+                    MessageBox.Show("Podany rodzaj konta do danego numeru PESEL nie istnieje. Wybierz prawidłowy rodzaj konta jakie posiadasz.", "Błąd rodzaj konta", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+                con.Close();
+            }
+        }
+    }
+}
