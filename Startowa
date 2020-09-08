@@ -1,0 +1,32 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+
+namespace BankPraca
+{
+    public partial class Startowa : Form
+    {
+        public Startowa()
+        {
+            InitializeComponent();
+        }
+
+        private void Zamknij_Click(object sender, EventArgs e)
+        {
+            Application.Exit();
+        }
+
+        private void Dalej_Click(object sender, EventArgs e)
+        {
+            this.Hide();
+            Wybor wybor = new Wybor();
+            wybor.Show();
+        }
+    }
+}
