@@ -1,0 +1,757 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Drawing;
+using System.Data;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+
+namespace BankPraca
+{
+    public partial class KalkulatorZdolnosciKredytowej : UserControl
+    {
+        double rata = 0;
+        double rata1 = 0;
+        double rata2 = 0;
+        double q = 0;
+        double r = 0; //oprocentowanie
+        double s = 0; //kwota kredytu
+        double n = 0; //ilość rat
+        double o = 0; //ilość osób
+        double z = 0; //zadłużenia
+        double k = 0; //koszty
+        double d = 0; //dochód
+        double d1 = 0;
+        double d2 = 0;
+
+        public KalkulatorZdolnosciKredytowej()
+        {
+            InitializeComponent();
+            wniosekKredyt1.Visible = false;
+            wniosekKredyt1.SendToBack();
+        }
+
+        private void buttonOblicz_Click(object sender, EventArgs e)
+        {
+            rata = 0;
+            rata1 = 0;
+            rata2 = 0;
+            q = 0;
+            r = 0;
+            s = 0;
+            n = 0;
+            o = 0;
+            z = 0;
+            k = 0;
+            d = 0;
+            d1 = 0;
+            d2 = 0;
+
+            if (textBoxZarobkiMiesieczne.Text.Length == 0)
+            {
+                MessageBox.Show("Źle podany dochód miesięczny.", "Błąd dochód miesięczny", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+            else
+            {
+                d = System.Double.Parse(textBoxZarobkiMiesieczne.Text);
+
+                if (textBoxIloscOsob.Text.Length == 0)
+                {
+                    MessageBox.Show("Źle podana liczba osób w gospodarstwie domowym. Jeżeli nie masz żadnych osób na utrzymaniu to wpisz: 0.", "Błąd miesięczne koszty.", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+                else
+                {
+                    if (System.Double.Parse(textBoxIloscOsob.Text) < 0 || System.Double.Parse(textBoxIloscOsob.Text) > 10)
+                    {
+                        MessageBox.Show("Ilość osób została źle podana. Liczba ta powinna być od 0 do 10.", "Błąd ilość osób", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
+                    else
+                    {
+                        o = System.Double.Parse(textBoxIloscOsob.Text);
+                        k = o * 800;
+
+                        if (comboBoxRodzajKredytu.Text == "Wybierz")
+                        {
+                            MessageBox.Show("Rodzaj kredytu nie został podany. Wybierz z podanych.", "Błąd rodzaj kredytu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        }
+                        else if (comboBoxRodzajKredytu.Text == "Kredyt dla młodych (2,0%)")
+                        {
+                            if (comboBoxIloscRat.Text == "Wybierz")
+                            {
+                                MessageBox.Show("Ilość rat nie została podana. Wybierz z podanych.", "Błąd ilość rat", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            }
+                            else
+                            {
+                                n = System.Double.Parse(comboBoxIloscRat.Text);
+                                r = 2.0;
+                                q = 1 + 0.83333333333 * r / 100;
+
+                                if (textBoxKosztyKredytow.Text.Length == 0)
+                                {
+                                    z = 0;
+                                    rata = d - k;
+
+                                    if (rata >= (d / 2))
+                                    {
+                                        rata = d / 2;
+                                        s = (rata / Math.Pow(q, n)) * ((Math.Pow(q, n) - 1) / (q - 1));
+
+                                        s = Math.Round(s, 2);
+                                        rata = Math.Round(rata, 2);
+
+                                        if (s < 60471)
+                                        {
+                                            s = 60471;
+                                            rata1 = s * ((Math.Pow(q, n)) * ((q - 1)) / ((Math.Pow(q, n)) - 1));
+                                            d1 = 2 * rata1;
+                                            d1 = Math.Round(d1, 0) + 1;
+                                            MessageBox.Show("Twój dochód miesięczny jest za mały. Powinnien on wynosić conajmniej " + d1 + "zł.", "Błąd dochód miesięczny", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                        }
+                                        else if (s > 1746113)
+                                        {
+                                            s = 1746113;
+                                            rata2 = s * ((Math.Pow(q, n)) * ((q - 1)) / ((Math.Pow(q, n)) - 1));
+                                            d2 = 2 * rata2;
+                                            d2 = Math.Round(d2, 0) - 1;
+                                            MessageBox.Show("Twój dochód miesięczny jest za wysoki. Powinnien on wynosić najwyżej " + d2 + "zł.", "Błąd dochód miesięczny", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                        }
+                                        else
+                                        {
+                                            DataTable kalkulator = new DataTable();
+
+                                            kalkulator.Columns.Add("", typeof(string));
+                                            kalkulator.Columns.Add("", typeof(string));
+
+                                            kalkulator.Rows.Add("Zarobki miesięczne", "" + d + "zł");
+                                            kalkulator.Rows.Add("Zadłużenia:", "" + z + "zł");
+                                            kalkulator.Rows.Add("Ilość osób w gospodarstwie domowym:", "" + o + "");
+                                            kalkulator.Rows.Add("Miesięczne koszty:", "" + k + "zł");
+                                            kalkulator.Rows.Add("Maksymalna rata kredytu:", "" + rata + "zł");
+                                            kalkulator.Rows.Add("Oprocentowanie kredytu:", "" + r + "%");
+                                            kalkulator.Rows.Add("Ilość rat:", "" + n + "");
+                                            kalkulator.Rows.Add("Maksymalna kwota kredytu:", "" + s + "zł");
+
+                                            dataGridView1.DataSource = kalkulator.DefaultView;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        s = (rata / Math.Pow(q, n)) * ((Math.Pow(q, n) - 1) / (q - 1));
+
+                                        s = Math.Round(s, 2);
+                                        rata = Math.Round(rata, 2);
+
+                                        if (s < 60471)
+                                        {
+                                            s = 60471;
+                                            rata1 = s * ((Math.Pow(q, n)) * ((q - 1)) / ((Math.Pow(q, n)) - 1));
+                                            d1 = rata1 + k;
+                                            d1 = Math.Round(d1, 0) + 1;
+                                            MessageBox.Show("Twój dochód miesięczny jest za mały. Powinnien on wynosić conajmniej " + d1 + "zł.", "Błąd dochód miesięczny", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                        }
+                                        else if (s > 1746113)
+                                        {
+                                            s = 1746113;
+                                            rata2 = s * ((Math.Pow(q, n)) * ((q - 1)) / ((Math.Pow(q, n)) - 1));
+                                            d2 = rata2 + k;
+                                            d2 = Math.Round(d2, 0) - 1;
+                                            MessageBox.Show("Twój dochód miesięczny jest za wysoki. Powinnien on wynosić najwyżej " + d2 + "zł.", "Błąd dochód miesięczny", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                        }
+                                        else
+                                        {
+                                            DataTable kalkulator = new DataTable();
+
+                                            kalkulator.Columns.Add("", typeof(string));
+                                            kalkulator.Columns.Add("", typeof(string));
+
+                                            kalkulator.Rows.Add("Zarobki miesięczne", "" + d + "zł");
+                                            kalkulator.Rows.Add("Zadłużenia:", "" + z + "zł");
+                                            kalkulator.Rows.Add("Ilość osób w gospodarstwie domowym:", "" + o + "");
+                                            kalkulator.Rows.Add("Miesięczne koszty:", "" + k + "zł");
+                                            kalkulator.Rows.Add("Maksymalna rata kredytu:", "" + rata + "zł");
+                                            kalkulator.Rows.Add("Oprocentowanie kredytu:", "" + r + "%");
+                                            kalkulator.Rows.Add("Ilość rat:", "" + n + "");
+                                            kalkulator.Rows.Add("Maksymalna kwota kredytu:", "" + s + "zł");
+
+                                            dataGridView1.DataSource = kalkulator.DefaultView;
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    z = System.Double.Parse(textBoxKosztyKredytow.Text);
+
+                                    if (z < 0 || z > 10000)
+                                    {
+                                        MessageBox.Show("Kwota zadłużeń jest za mała bądź za duża. Najmniejszą kwotę jaką można wpisać to 0zł, a największą 10 000zł.", "Błąd zadłużenia", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                    }
+                                    else
+                                    {
+                                        rata = d - k - z;
+
+                                        if (rata >= (d / 2))
+                                        {
+                                            rata = d / 2;
+                                            s = (rata / Math.Pow(q, n)) * ((Math.Pow(q, n) - 1) / (q - 1));
+
+                                            s = Math.Round(s, 2);
+                                            rata = Math.Round(rata, 2);
+
+                                            if (s < 60471)
+                                            {
+                                                s = 60471;
+                                                rata1 = s * ((Math.Pow(q, n)) * ((q - 1)) / ((Math.Pow(q, n)) - 1));
+                                                d1 = 2 * rata1;
+                                                d1 = Math.Round(d1, 0) + 1;
+                                                MessageBox.Show("Twój dochód miesięczny jest za mały. Powinnien on wynosić conajmniej " + d1 + "zł.", "Błąd dochód miesięczny", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                            }
+                                            else if (s > 1746113)
+                                            {
+                                                s = 1746113;
+                                                rata2 = s * ((Math.Pow(q, n)) * ((q - 1)) / ((Math.Pow(q, n)) - 1));
+                                                d2 = 2 * rata2;
+                                                d2 = Math.Round(d2, 0) - 1;
+                                                MessageBox.Show("Twój dochód miesięczny jest za wysoki. Powinnien on wynosić najwyżej " + d2 + "zł.", "Błąd dochód miesięczny", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                            }
+                                            else
+                                            {
+                                                DataTable kalkulator = new DataTable();
+
+                                                kalkulator.Columns.Add("", typeof(string));
+                                                kalkulator.Columns.Add("", typeof(string));
+
+                                                kalkulator.Rows.Add("Zarobki miesięczne", "" + d + "zł");
+                                                kalkulator.Rows.Add("Zadłużenia:", "" + z + "zł");
+                                                kalkulator.Rows.Add("Ilość osób w gospodarstwie domowym:", "" + o + "");
+                                                kalkulator.Rows.Add("Miesięczne koszty:", "" + k + "zł");
+                                                kalkulator.Rows.Add("Maksymalna rata kredytu:", "" + rata + "zł");
+                                                kalkulator.Rows.Add("Oprocentowanie kredytu:", "" + r + "%");
+                                                kalkulator.Rows.Add("Ilość rat:", "" + n + "");
+                                                kalkulator.Rows.Add("Maksymalna kwota kredytu:", "" + s + "zł");
+
+                                                dataGridView1.DataSource = kalkulator.DefaultView;
+                                            }
+                                        }
+                                        else
+                                        {
+
+                                            s = (rata / Math.Pow(q, n)) * ((Math.Pow(q, n) - 1) / (q - 1));
+
+                                            s = Math.Round(s, 2);
+                                            rata = Math.Round(rata, 2);
+
+                                            if (s < 60471)
+                                            {
+                                                s = 60471;
+                                                rata1 = s * ((Math.Pow(q, n)) * ((q - 1)) / ((Math.Pow(q, n)) - 1));
+                                                d1 = rata1 + k + z;
+                                                d1 = Math.Round(d1, 0) + 1;
+                                                MessageBox.Show("Twój dochód miesięczny jest za mały. Powinnien on wynosić conajmniej " + d1 + "zł.", "Błąd dochód miesięczny", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                            }
+                                            else if (s > 1746113)
+                                            {
+                                                s = 1746113;
+                                                rata2 = s * ((Math.Pow(q, n)) * ((q - 1)) / ((Math.Pow(q, n)) - 1));
+                                                d2 = rata2 + k + z;
+                                                d2 = Math.Round(d2, 0) - 1;
+                                                MessageBox.Show("Twój dochód miesięczny jest za wysoki. Powinnien on wynosić najwyżej " + d2 + "zł.", "Błąd dochód miesięczny", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                            }
+                                            else
+                                            {
+                                                DataTable kalkulator = new DataTable();
+
+                                                kalkulator.Columns.Add("", typeof(string));
+                                                kalkulator.Columns.Add("", typeof(string));
+
+                                                kalkulator.Rows.Add("Zarobki miesięczne", "" + d + "zł");
+                                                kalkulator.Rows.Add("Zadłużenia:", "" + z + "zł");
+                                                kalkulator.Rows.Add("Ilość osób w gospodarstwie domowym:", "" + o + "");
+                                                kalkulator.Rows.Add("Miesięczne koszty:", "" + k + "zł");
+                                                kalkulator.Rows.Add("Maksymalna rata kredytu:", "" + rata + "zł");
+                                                kalkulator.Rows.Add("Oprocentowanie kredytu:", "" + r + "%");
+                                                kalkulator.Rows.Add("Ilość rat:", "" + n + "");
+                                                kalkulator.Rows.Add("Maksymalna kwota kredytu:", "" + s + "zł");
+
+                                                dataGridView1.DataSource = kalkulator.DefaultView;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        else if (comboBoxRodzajKredytu.Text == "Kredyt mieszkaniowy (4,5%)")
+                        {
+                            if (comboBoxIloscRat.Text == "Wybierz")
+                            {
+                                MessageBox.Show("Ilość rat nie została podana. Wybierz z podanych.", "Błąd ilość rat", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            }
+                            else
+                            {
+                                n = System.Double.Parse(comboBoxIloscRat.Text);
+                                r = 4.5;
+                                q = 1 + 0.83333333333 * r / 100;
+
+                                if (textBoxKosztyKredytow.Text.Length == 0)
+                                {
+                                    z = 0;
+                                    rata = d - k;
+
+                                    if (rata >= (d / 2))
+                                    {
+                                        rata = d / 2;
+                                        s = (rata / Math.Pow(q, n)) * ((Math.Pow(q, n) - 1) / (q - 1));
+
+                                        s = Math.Round(s, 2);
+                                        rata = Math.Round(rata, 2);
+
+                                        if (s < 60471)
+                                        {
+                                            s = 60471;
+                                            rata1 = s * ((Math.Pow(q, n)) * ((q - 1)) / ((Math.Pow(q, n)) - 1));
+                                            d1 = 2 * rata1;
+                                            d1 = Math.Round(d1, 0) + 1;
+                                            MessageBox.Show("Twój dochód miesięczny jest za mały. Powinnien on wynosić conajmniej " + d1 + "zł.", "Błąd dochód miesięczny", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                        }
+                                        else if (s > 1746113)
+                                        {
+                                            s = 1746113;
+                                            rata2 = s * ((Math.Pow(q, n)) * ((q - 1)) / ((Math.Pow(q, n)) - 1));
+                                            d2 = 2 * rata2;
+                                            d2 = Math.Round(d2, 0) - 1;
+                                            MessageBox.Show("Twój dochód miesięczny jest za wysoki. Powinnien on wynosić najwyżej " + d2 + "zł.", "Błąd dochód miesięczny", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                        }
+                                        else
+                                        {
+                                            DataTable kalkulator = new DataTable();
+
+                                            kalkulator.Columns.Add("", typeof(string));
+                                            kalkulator.Columns.Add("", typeof(string));
+
+                                            kalkulator.Rows.Add("Zarobki miesięczne", "" + d + "zł");
+                                            kalkulator.Rows.Add("Zadłużenia:", "" + z + "zł");
+                                            kalkulator.Rows.Add("Ilość osób w gospodarstwie domowym:", "" + o + "");
+                                            kalkulator.Rows.Add("Miesięczne koszty:", "" + k + "zł");
+                                            kalkulator.Rows.Add("Maksymalna rata kredytu:", "" + rata + "zł");
+                                            kalkulator.Rows.Add("Oprocentowanie kredytu:", "" + r + "%");
+                                            kalkulator.Rows.Add("Ilość rat:", "" + n + "");
+                                            kalkulator.Rows.Add("Maksymalna kwota kredytu:", "" + s + "zł");
+
+                                            dataGridView1.DataSource = kalkulator.DefaultView;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        s = (rata / Math.Pow(q, n)) * ((Math.Pow(q, n) - 1) / (q - 1));
+
+                                        s = Math.Round(s, 2);
+                                        rata = Math.Round(rata, 2);
+
+                                        if (s < 60471)
+                                        {
+                                            s = 60471;
+                                            rata1 = s * ((Math.Pow(q, n)) * ((q - 1)) / ((Math.Pow(q, n)) - 1));
+                                            d1 = rata1 + k;
+                                            d1 = Math.Round(d1, 0) + 1;
+                                            MessageBox.Show("Twój dochód miesięczny jest za mały. Powinnien on wynosić conajmniej " + d1 + "zł.", "Błąd dochód miesięczny", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                        }
+                                        else if (s > 1746113)
+                                        {
+                                            s = 1746113;
+                                            rata2 = s * ((Math.Pow(q, n)) * ((q - 1)) / ((Math.Pow(q, n)) - 1));
+                                            d2 = rata2 + k;
+                                            d2 = Math.Round(d2, 0) - 1;
+                                            MessageBox.Show("Twój dochód miesięczny jest za wysoki. Powinnien on wynosić najwyżej " + d2 + "zł.", "Błąd dochód miesięczny", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                        }
+                                        else
+                                        {
+                                            DataTable kalkulator = new DataTable();
+
+                                            kalkulator.Columns.Add("", typeof(string));
+                                            kalkulator.Columns.Add("", typeof(string));
+
+                                            kalkulator.Rows.Add("Zarobki miesięczne", "" + d + "zł");
+                                            kalkulator.Rows.Add("Zadłużenia:", "" + z + "zł");
+                                            kalkulator.Rows.Add("Ilość osób w gospodarstwie domowym:", "" + o + "");
+                                            kalkulator.Rows.Add("Miesięczne koszty:", "" + k + "zł");
+                                            kalkulator.Rows.Add("Maksymalna rata kredytu:", "" + rata + "zł");
+                                            kalkulator.Rows.Add("Oprocentowanie kredytu:", "" + r + "%");
+                                            kalkulator.Rows.Add("Ilość rat:", "" + n + "");
+                                            kalkulator.Rows.Add("Maksymalna kwota kredytu:", "" + s + "zł");
+
+                                            dataGridView1.DataSource = kalkulator.DefaultView;
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    z = System.Double.Parse(textBoxKosztyKredytow.Text);
+
+                                    if (z < 0 || z > 10000)
+                                    {
+                                        MessageBox.Show("Kwota zadłużeń jest za mała bądź za duża. Najmniejszą kwotę jaką można wpisać to 0zł, a największą 10 000zł.", "Błąd zadłużenia", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                    }
+                                    else
+                                    {
+                                        rata = d - k - z;
+
+                                        if (rata >= (d / 2))
+                                        {
+                                            rata = d / 2;
+                                            s = (rata / Math.Pow(q, n)) * ((Math.Pow(q, n) - 1) / (q - 1));
+
+                                            s = Math.Round(s, 2);
+                                            rata = Math.Round(rata, 2);
+
+                                            if (s < 60471)
+                                            {
+                                                s = 60471;
+                                                rata1 = s * ((Math.Pow(q, n)) * ((q - 1)) / ((Math.Pow(q, n)) - 1));
+                                                d1 = 2 * rata1;
+                                                d1 = Math.Round(d1, 0) + 1;
+                                                MessageBox.Show("Twój dochód miesięczny jest za mały. Powinnien on wynosić conajmniej " + d1 + "zł.", "Błąd dochód miesięczny", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                            }
+                                            else if (s > 1746113)
+                                            {
+                                                s = 1746113;
+                                                rata2 = s * ((Math.Pow(q, n)) * ((q - 1)) / ((Math.Pow(q, n)) - 1));
+                                                d2 = 2 * rata2;
+                                                d2 = Math.Round(d2, 0) - 1;
+                                                MessageBox.Show("Twój dochód miesięczny jest za wysoki. Powinnien on wynosić najwyżej " + d2 + "zł.", "Błąd dochód miesięczny", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                            }
+                                            else
+                                            {
+                                                DataTable kalkulator = new DataTable();
+
+                                                kalkulator.Columns.Add("", typeof(string));
+                                                kalkulator.Columns.Add("", typeof(string));
+
+                                                kalkulator.Rows.Add("Zarobki miesięczne", "" + d + "zł");
+                                                kalkulator.Rows.Add("Zadłużenia:", "" + z + "zł");
+                                                kalkulator.Rows.Add("Ilość osób w gospodarstwie domowym:", "" + o + "");
+                                                kalkulator.Rows.Add("Miesięczne koszty:", "" + k + "zł");
+                                                kalkulator.Rows.Add("Maksymalna rata kredytu:", "" + rata + "zł");
+                                                kalkulator.Rows.Add("Oprocentowanie kredytu:", "" + r + "%");
+                                                kalkulator.Rows.Add("Ilość rat:", "" + n + "");
+                                                kalkulator.Rows.Add("Maksymalna kwota kredytu:", "" + s + "zł");
+
+                                                dataGridView1.DataSource = kalkulator.DefaultView;
+                                            }
+                                        }
+                                        else
+                                        {
+
+                                            s = (rata / Math.Pow(q, n)) * ((Math.Pow(q, n) - 1) / (q - 1));
+
+                                            s = Math.Round(s, 2);
+                                            rata = Math.Round(rata, 2);
+
+                                            if (s < 60471)
+                                            {
+                                                s = 60471;
+                                                rata1 = s * ((Math.Pow(q, n)) * ((q - 1)) / ((Math.Pow(q, n)) - 1));
+                                                d1 = rata1 + k + z;
+                                                d1 = Math.Round(d1, 0) + 1;
+                                                MessageBox.Show("Twój dochód miesięczny jest za mały. Powinnien on wynosić conajmniej " + d1 + "zł.", "Błąd dochód miesięczny", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                            }
+                                            else if (s > 1746113)
+                                            {
+                                                s = 1746113;
+                                                rata2 = s * ((Math.Pow(q, n)) * ((q - 1)) / ((Math.Pow(q, n)) - 1));
+                                                d2 = rata2 + k + z;
+                                                d2 = Math.Round(d2, 0) - 1;
+                                                MessageBox.Show("Twój dochód miesięczny jest za wysoki. Powinnien on wynosić najwyżej " + d2 + "zł.", "Błąd dochód miesięczny", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                            }
+                                            else
+                                            {
+                                                DataTable kalkulator = new DataTable();
+
+                                                kalkulator.Columns.Add("", typeof(string));
+                                                kalkulator.Columns.Add("", typeof(string));
+
+                                                kalkulator.Rows.Add("Zarobki miesięczne", "" + d + "zł");
+                                                kalkulator.Rows.Add("Zadłużenia:", "" + z + "zł");
+                                                kalkulator.Rows.Add("Ilość osób w gospodarstwie domowym:", "" + o + "");
+                                                kalkulator.Rows.Add("Miesięczne koszty:", "" + k + "zł");
+                                                kalkulator.Rows.Add("Maksymalna rata kredytu:", "" + rata + "zł");
+                                                kalkulator.Rows.Add("Oprocentowanie kredytu:", "" + r + "%");
+                                                kalkulator.Rows.Add("Ilość rat:", "" + n + "");
+                                                kalkulator.Rows.Add("Maksymalna kwota kredytu:", "" + s + "zł");
+
+                                                dataGridView1.DataSource = kalkulator.DefaultView;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        else if (comboBoxRodzajKredytu.Text == "Kredyt samochodowy (3,5%)")
+                        {
+                            if (comboBoxIloscRat.Text == "Wybierz")
+                            {
+                                MessageBox.Show("Ilość rat nie została podana. Wybierz z podanych.", "Błąd ilość rat", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            }
+                            else
+                            {
+                                n = System.Double.Parse(comboBoxIloscRat.Text);
+                                r = 3.5;
+                                q = 1 + 0.83333333333 * r / 100;
+
+                                if (textBoxKosztyKredytow.Text.Length == 0)
+                                {
+                                    z = 0;
+                                    rata = d - k;
+
+                                    if (rata >= (d / 2))
+                                    {
+                                        rata = d / 2;
+                                        s = (rata / Math.Pow(q, n)) * ((Math.Pow(q, n) - 1) / (q - 1));
+
+                                        s = Math.Round(s, 2);
+                                        rata = Math.Round(rata, 2);
+
+                                        if (s < 60471)
+                                        {
+                                            s = 60471;
+                                            rata1 = s * ((Math.Pow(q, n)) * ((q - 1)) / ((Math.Pow(q, n)) - 1));
+                                            d1 = 2 * rata1;
+                                            d1 = Math.Round(d1, 0) + 1;
+                                            MessageBox.Show("Twój dochód miesięczny jest za mały. Powinnien on wynosić conajmniej " + d1 + "zł.", "Błąd dochód miesięczny", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                        }
+                                        else if (s > 1746113)
+                                        {
+                                            s = 1746113;
+                                            rata2 = s * ((Math.Pow(q, n)) * ((q - 1)) / ((Math.Pow(q, n)) - 1));
+                                            d2 = 2 * rata2;
+                                            d2 = Math.Round(d2, 0) - 1;
+                                            MessageBox.Show("Twój dochód miesięczny jest za wysoki. Powinnien on wynosić najwyżej " + d2 + "zł.", "Błąd dochód miesięczny", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                        }
+                                        else
+                                        {
+                                            DataTable kalkulator = new DataTable();
+
+                                            kalkulator.Columns.Add("", typeof(string));
+                                            kalkulator.Columns.Add("", typeof(string));
+
+                                            kalkulator.Rows.Add("Zarobki miesięczne", "" + d + "zł");
+                                            kalkulator.Rows.Add("Zadłużenia:", "" + z + "zł");
+                                            kalkulator.Rows.Add("Ilość osób w gospodarstwie domowym:", "" + o + "");
+                                            kalkulator.Rows.Add("Miesięczne koszty:", "" + k + "zł");
+                                            kalkulator.Rows.Add("Maksymalna rata kredytu:", "" + rata + "zł");
+                                            kalkulator.Rows.Add("Oprocentowanie kredytu:", "" + r + "%");
+                                            kalkulator.Rows.Add("Ilość rat:", "" + n + "");
+                                            kalkulator.Rows.Add("Maksymalna kwota kredytu:", "" + s + "zł");
+
+                                            dataGridView1.DataSource = kalkulator.DefaultView;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        s = (rata / Math.Pow(q, n)) * ((Math.Pow(q, n) - 1) / (q - 1));
+
+                                        s = Math.Round(s, 2);
+                                        rata = Math.Round(rata, 2);
+
+                                        if (s < 60471)
+                                        {
+                                            s = 60471;
+                                            rata1 = s * ((Math.Pow(q, n)) * ((q - 1)) / ((Math.Pow(q, n)) - 1));
+                                            d1 = rata1 + k;
+                                            d1 = Math.Round(d1, 0) + 1;
+                                            MessageBox.Show("Twój dochód miesięczny jest za mały. Powinnien on wynosić conajmniej " + d1 + "zł.", "Błąd dochód miesięczny", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                        }
+                                        else if (s > 1746113)
+                                        {
+                                            s = 1746113;
+                                            rata2 = s * ((Math.Pow(q, n)) * ((q - 1)) / ((Math.Pow(q, n)) - 1));
+                                            d2 = rata2 + k;
+                                            d2 = Math.Round(d2, 0) - 1;
+                                            MessageBox.Show("Twój dochód miesięczny jest za wysoki. Powinnien on wynosić najwyżej " + d2 + "zł.", "Błąd dochód miesięczny", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                        }
+                                        else
+                                        {
+                                            DataTable kalkulator = new DataTable();
+
+                                            kalkulator.Columns.Add("", typeof(string));
+                                            kalkulator.Columns.Add("", typeof(string));
+
+                                            kalkulator.Rows.Add("Zarobki miesięczne", "" + d + "zł");
+                                            kalkulator.Rows.Add("Zadłużenia:", "" + z + "zł");
+                                            kalkulator.Rows.Add("Ilość osób w gospodarstwie domowym:", "" + o + "");
+                                            kalkulator.Rows.Add("Miesięczne koszty:", "" + k + "zł");
+                                            kalkulator.Rows.Add("Maksymalna rata kredytu:", "" + rata + "zł");
+                                            kalkulator.Rows.Add("Oprocentowanie kredytu:", "" + r + "%");
+                                            kalkulator.Rows.Add("Ilość rat:", "" + n + "");
+                                            kalkulator.Rows.Add("Maksymalna kwota kredytu:", "" + s + "zł");
+
+                                            dataGridView1.DataSource = kalkulator.DefaultView;
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    z = System.Double.Parse(textBoxKosztyKredytow.Text);
+
+                                    if (z < 0 || z > 10000)
+                                    {
+                                        MessageBox.Show("Kwota zadłużeń jest za mała bądź za duża. Najmniejszą kwotę jaką można wpisać to 0zł, a największą 10 000zł.", "Błąd zadłużenia", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                    }
+                                    else
+                                    {
+                                        rata = d - k - z;
+
+                                        if (rata >= (d / 2))
+                                        {
+                                            rata = d / 2;
+                                            s = (rata / Math.Pow(q, n)) * ((Math.Pow(q, n) - 1) / (q - 1));
+
+                                            s = Math.Round(s, 2);
+                                            rata = Math.Round(rata, 2);
+
+                                            if (s < 60471)
+                                            {
+                                                s = 60471;
+                                                rata1 = s * ((Math.Pow(q, n)) * ((q - 1)) / ((Math.Pow(q, n)) - 1));
+                                                d1 = 2 * rata1;
+                                                d1 = Math.Round(d1, 0) + 1;
+                                                MessageBox.Show("Twój dochód miesięczny jest za mały. Powinnien on wynosić conajmniej " + d1 + "zł.", "Błąd dochód miesięczny", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                            }
+                                            else if (s > 1746113)
+                                            {
+                                                s = 1746113;
+                                                rata2 = s * ((Math.Pow(q, n)) * ((q - 1)) / ((Math.Pow(q, n)) - 1));
+                                                d2 = 2 * rata2;
+                                                d2 = Math.Round(d2, 0) - 1;
+                                                MessageBox.Show("Twój dochód miesięczny jest za wysoki. Powinnien on wynosić najwyżej " + d2 + "zł.", "Błąd dochód miesięczny", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                            }
+                                            else
+                                            {
+                                                DataTable kalkulator = new DataTable();
+
+                                                kalkulator.Columns.Add("", typeof(string));
+                                                kalkulator.Columns.Add("", typeof(string));
+
+                                                kalkulator.Rows.Add("Zarobki miesięczne", "" + d + "zł");
+                                                kalkulator.Rows.Add("Zadłużenia:", "" + z + "zł");
+                                                kalkulator.Rows.Add("Ilość osób w gospodarstwie domowym:", "" + o + "");
+                                                kalkulator.Rows.Add("Miesięczne koszty:", "" + k + "zł");
+                                                kalkulator.Rows.Add("Maksymalna rata kredytu:", "" + rata + "zł");
+                                                kalkulator.Rows.Add("Oprocentowanie kredytu:", "" + r + "%");
+                                                kalkulator.Rows.Add("Ilość rat:", "" + n + "");
+                                                kalkulator.Rows.Add("Maksymalna kwota kredytu:", "" + s + "zł");
+
+                                                dataGridView1.DataSource = kalkulator.DefaultView;
+                                            }
+                                        }
+                                        else
+                                        {
+
+                                            s = (rata / Math.Pow(q, n)) * ((Math.Pow(q, n) - 1) / (q - 1));
+
+                                            s = Math.Round(s, 2);
+                                            rata = Math.Round(rata, 2);
+
+                                            if (s < 60471)
+                                            {
+                                                s = 60471;
+                                                rata1 = s * ((Math.Pow(q, n)) * ((q - 1)) / ((Math.Pow(q, n)) - 1));
+                                                d1 = rata1 + k + z;
+                                                d1 = Math.Round(d1, 0) + 1;
+                                                MessageBox.Show("Twój dochód miesięczny jest za mały. Powinnien on wynosić conajmniej " + d1 + "zł.", "Błąd dochód miesięczny", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                            }
+                                            else if (s > 1746113)
+                                            {
+                                                s = 1746113;
+                                                rata2 = s * ((Math.Pow(q, n)) * ((q - 1)) / ((Math.Pow(q, n)) - 1));
+                                                d2 = rata2 + k + z;
+                                                d2 = Math.Round(d2, 0) - 1;
+                                                MessageBox.Show("Twój dochód miesięczny jest za wysoki. Powinnien on wynosić najwyżej " + d2 + "zł.", "Błąd dochód miesięczny", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                            }
+                                            else
+                                            {
+                                                DataTable kalkulator = new DataTable();
+
+                                                kalkulator.Columns.Add("", typeof(string));
+                                                kalkulator.Columns.Add("", typeof(string));
+
+                                                kalkulator.Rows.Add("Zarobki miesięczne", "" + d + "zł");
+                                                kalkulator.Rows.Add("Zadłużenia:", "" + z + "zł");
+                                                kalkulator.Rows.Add("Ilość osób w gospodarstwie domowym:", "" + o + "");
+                                                kalkulator.Rows.Add("Miesięczne koszty:", "" + k + "zł");
+                                                kalkulator.Rows.Add("Maksymalna rata kredytu:", "" + rata + "zł");
+                                                kalkulator.Rows.Add("Oprocentowanie kredytu:", "" + r + "%");
+                                                kalkulator.Rows.Add("Ilość rat:", "" + n + "");
+                                                kalkulator.Rows.Add("Maksymalna kwota kredytu:", "" + s + "zł");
+
+                                                dataGridView1.DataSource = kalkulator.DefaultView;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+
+        private void buttonWniosek_Click(object sender, EventArgs e)
+        {
+            wniosekKredyt1.Visible = true;
+            wniosekKredyt1.BringToFront();
+        }
+
+        private void comboBoxRodzajKredytu_KeyUp(object sender, KeyEventArgs e)
+        {
+            comboBoxRodzajKredytu.SelectedItem = "Wybierz";
+            MessageBox.Show("Źle wprowadzone. Wybierz z listy", "Błąd rodzaj kredytu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+
+        private void comboBoxIloscRat_KeyUp(object sender, KeyEventArgs e)
+        {
+            comboBoxIloscRat.SelectedItem = "Wybierz";
+            MessageBox.Show("Źle wprowadzone. Wybierz z listy", "Błąd ilość rat", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+
+        private void textBoxIloscOsob_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.D0 || e.KeyCode == Keys.D1 || e.KeyCode == Keys.D2 || e.KeyCode == Keys.D3 || e.KeyCode == Keys.D4 || e.KeyCode == Keys.D5 || e.KeyCode == Keys.D6 || e.KeyCode == Keys.D7 || e.KeyCode == Keys.D8 || e.KeyCode == Keys.D9 || e.KeyCode == Keys.NumPad0 || e.KeyCode == Keys.NumPad1 || e.KeyCode == Keys.NumPad2 || e.KeyCode == Keys.NumPad3 || e.KeyCode == Keys.NumPad4 || e.KeyCode == Keys.NumPad5 || e.KeyCode == Keys.NumPad6 || e.KeyCode == Keys.NumPad7 || e.KeyCode == Keys.NumPad8 || e.KeyCode == Keys.NumPad9 || e.KeyCode == Keys.Back)
+            {
+                e.Handled = true;
+            }
+            else
+            {
+                textBoxIloscOsob.Clear();
+                MessageBox.Show("Źle wprowadzone. Podaj liczbę.", "Błąd miesięczne koszty", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        private void textBoxKosztyKredytow_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.D0 || e.KeyCode == Keys.D1 || e.KeyCode == Keys.D2 || e.KeyCode == Keys.D3 || e.KeyCode == Keys.D4 || e.KeyCode == Keys.D5 || e.KeyCode == Keys.D6 || e.KeyCode == Keys.D7 || e.KeyCode == Keys.D8 || e.KeyCode == Keys.D9 || e.KeyCode == Keys.NumPad0 || e.KeyCode == Keys.NumPad1 || e.KeyCode == Keys.NumPad2 || e.KeyCode == Keys.NumPad3 || e.KeyCode == Keys.NumPad4 || e.KeyCode == Keys.NumPad5 || e.KeyCode == Keys.NumPad6 || e.KeyCode == Keys.NumPad7 || e.KeyCode == Keys.NumPad8 || e.KeyCode == Keys.NumPad9 || e.KeyCode == Keys.Back)
+            {
+                e.Handled = true;
+            }
+            else
+            {
+                textBoxKosztyKredytow.Clear();
+                MessageBox.Show("Źle wprowadzone. Podaj liczbę.", "Błąd zadłużenia", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        private void textBoxZarobkiMiesieczne_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.D0 || e.KeyCode == Keys.D1 || e.KeyCode == Keys.D2 || e.KeyCode == Keys.D3 || e.KeyCode == Keys.D4 || e.KeyCode == Keys.D5 || e.KeyCode == Keys.D6 || e.KeyCode == Keys.D7 || e.KeyCode == Keys.D8 || e.KeyCode == Keys.D9 || e.KeyCode == Keys.NumPad0 || e.KeyCode == Keys.NumPad1 || e.KeyCode == Keys.NumPad2 || e.KeyCode == Keys.NumPad3 || e.KeyCode == Keys.NumPad4 || e.KeyCode == Keys.NumPad5 || e.KeyCode == Keys.NumPad6 || e.KeyCode == Keys.NumPad7 || e.KeyCode == Keys.NumPad8 || e.KeyCode == Keys.NumPad9 || e.KeyCode == Keys.Back)
+            {
+                e.Handled = true;
+            }
+            else
+            {
+                textBoxZarobkiMiesieczne.Clear();
+                MessageBox.Show("Źle wprowadzone. Podaj liczbę.", "Błąd dochód miesięczny", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+    }
+}
