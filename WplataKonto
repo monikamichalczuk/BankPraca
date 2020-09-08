@@ -1,0 +1,189 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Drawing;
+using System.Data;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Data.SqlClient;
+
+namespace BankPraca
+{
+    public partial class WplataKonto : UserControl
+    {
+        public WplataKonto()
+        {
+            InitializeComponent();
+        }
+
+        private void textBoxWplata_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.D0 || e.KeyCode == Keys.D1 || e.KeyCode == Keys.D2 || e.KeyCode == Keys.D3 || e.KeyCode == Keys.D4 || e.KeyCode == Keys.D5 || e.KeyCode == Keys.D6 || e.KeyCode == Keys.D7 || e.KeyCode == Keys.D8 || e.KeyCode == Keys.D9 || e.KeyCode == Keys.NumPad0 || e.KeyCode == Keys.NumPad1 || e.KeyCode == Keys.NumPad2 || e.KeyCode == Keys.NumPad3 || e.KeyCode == Keys.NumPad4 || e.KeyCode == Keys.NumPad5 || e.KeyCode == Keys.NumPad6 || e.KeyCode == Keys.NumPad7 || e.KeyCode == Keys.NumPad8 || e.KeyCode == Keys.NumPad9 || e.KeyCode == Keys.Back)
+            {
+                e.Handled = true;
+            }
+            else
+            {
+                textBoxWplata.Clear();
+                MessageBox.Show("Źle wprowadzone. Podaj liczbę.", "Błąd kwota wpłaty", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        private void textBoxWyplata_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.D0 || e.KeyCode == Keys.D1 || e.KeyCode == Keys.D2 || e.KeyCode == Keys.D3 || e.KeyCode == Keys.D4 || e.KeyCode == Keys.D5 || e.KeyCode == Keys.D6 || e.KeyCode == Keys.D7 || e.KeyCode == Keys.D8 || e.KeyCode == Keys.D9 || e.KeyCode == Keys.NumPad0 || e.KeyCode == Keys.NumPad1 || e.KeyCode == Keys.NumPad2 || e.KeyCode == Keys.NumPad3 || e.KeyCode == Keys.NumPad4 || e.KeyCode == Keys.NumPad5 || e.KeyCode == Keys.NumPad6 || e.KeyCode == Keys.NumPad7 || e.KeyCode == Keys.NumPad8 || e.KeyCode == Keys.NumPad9 || e.KeyCode == Keys.Back)
+            {
+                e.Handled = true;
+            }
+            else
+            {
+                textBoxWyplata.Clear();
+                MessageBox.Show("Źle wprowadzone. Podaj liczbę.", "Błąd kwota wypłaty", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        private void comboBoxRodzajKonta_KeyUp(object sender, KeyEventArgs e)
+        {
+            comboBoxRodzajKonta.SelectedItem = "Wybierz";
+            MessageBox.Show("Źle wprowadzone. Wybierz z listy", "Błąd rodzaj konta", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+
+        private void comboBoxRodzaj_KeyUp(object sender, KeyEventArgs e)
+        {
+            comboBoxRodzaj.SelectedItem = "Wybierz";
+            MessageBox.Show("Źle wprowadzone. Wybierz z listy", "Błąd rodzaj konta", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+
+        private void buttonWplac_Click(object sender, EventArgs e)
+        {
+            if (textBoxWplata.Text.Length == 0)
+            {
+                MessageBox.Show("Brak kwoty wpłaty. Podaj kwotę.", "Brak kwoty wpłaty", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+            else
+            {
+                if (System.Decimal.Parse(textBoxWplata.Text) < 1 || System.Decimal.Parse(textBoxWplata.Text) > 3000)
+                {
+                    MessageBox.Show("Kwota do wpłaty jest za mała bądź za duża. Kwota do wpłaty musi być conajmniej 1zł, ale jednocześnie mniejsza niż 3 000zł.", "Błąd kwota wpłaty", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+                else
+                {
+                    if (comboBoxRodzajKonta.Text == "Wybierz")
+                    {
+                        MessageBox.Show("Rodzaj konta nie został wybrany. Wybierz z listy.", "Błąd rodzaj konta", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
+                    else
+                    {
+                        SqlConnection con = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\Monika\Desktop\BankPraca\BazaBank.mdf;Integrated Security=True;Connect Timeout=30");
+                        con.Open();
+                        SqlDataAdapter sda = new SqlDataAdapter("SELECT Count(*) From InfoKonto Where PESEL = '" + StalyLogowanie.pesel + "' AND RodzajKonta = '" + comboBoxRodzajKonta.Text + "'", con);
+                        DataTable da = new DataTable();
+                        sda.Fill(da);
+                        if (da.Rows[0][0].ToString() == "1")
+                        {
+                            Random zmienna1 = new Random();
+                            double w = zmienna1.Next(100000000, 999999999);
+
+                            SqlDataAdapter sdg = new SqlDataAdapter("SELECT Count(*) From Konto" + StalyLogowanie.pesel + " Where NumerTransakcji = " + w + "", con);
+                            DataTable dg = new DataTable();
+                            sdg.Fill(dg);
+                            if (dg.Rows[0][0].ToString() == "1")
+                            {
+                                MessageBox.Show("Wylosowany numer transakcji istnieje w bazie danych. Spróbuj ponownie.", "Błąd numer transakcji", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            }
+                            else
+                            {
+                                SqlCommand command = new SqlCommand("UPDATE InfoKonto SET StanKonta +=" + System.Decimal.Parse(textBoxWplata.Text) + " WHERE PESEL = '" + StalyLogowanie.pesel + "'", con);
+                                command.ExecuteNonQuery();
+                                SqlCommand command1 = new SqlCommand("INSERT INTO Konto" + StalyLogowanie.pesel + " VALUES(" + w + ",'" + DateTime.Today.ToString("yyyy-MM-dd") + "','Wpłata'," + System.Decimal.Parse(textBoxWplata.Text) + ")", con);
+                                command1.ExecuteNonQuery();
+
+                                MessageBox.Show("Wpłata została dokonana.", "Wpłata", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            }
+
+                        }
+                        else
+                        {
+                            MessageBox.Show("Podany rodzaj konta do danego numeru PESEL nie istnieje. Wybierz prawidłowy rodzaj konta jakie posiadasz.", "Błąd rodzaj konta", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        }
+                        con.Close();
+                    }
+                }
+            }
+        }
+
+        private void buttonWyplac_Click(object sender, EventArgs e)
+        {
+            if (textBoxWyplata.Text.Length == 0)
+            {
+                MessageBox.Show("Brak kwoty wpłaty. Podaj kwotę.", "Brak kwoty wpłaty", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+            else
+            {
+                if (System.Decimal.Parse(textBoxWyplata.Text) < 1 || System.Decimal.Parse(textBoxWyplata.Text) > 3000)
+                {
+                    MessageBox.Show("Kwota do wypłaty jest za mała bądź za duża. Kwota do wypłaty musi być conajmniej 1zł, ale jednocześnie mniejsza niż 3 000zł.", "Błąd kwota wypłaty", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+                else
+                {
+                    if (comboBoxRodzaj.Text == "Wybierz")
+                    {
+                        MessageBox.Show("Rodzaj konta nie został wybrany. Wybierz z listy.", "Błąd rodzaj konta", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
+                    else
+                    {
+                        SqlConnection con = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\Monika\Desktop\BankPraca\BazaBank.mdf;Integrated Security=True;Connect Timeout=30");
+                        con.Open();
+                        SqlDataAdapter sda = new SqlDataAdapter("SELECT Count(*) From InfoKonto Where PESEL = '" + StalyLogowanie.pesel + "' AND RodzajKonta = '" + comboBoxRodzaj.Text + "'", con);
+                        DataTable da = new DataTable();
+                        sda.Fill(da);
+                        if (da.Rows[0][0].ToString() == "1")
+                        {
+                            double kwota;
+                            SqlCommand query = new SqlCommand("SELECT StanKonta FROM InfoKonto WHERE PESEL = '" + StalyLogowanie.pesel + "'", con);
+                            SqlDataReader queryResult = query.ExecuteReader();
+                            DataTable di = new DataTable();
+                            di.Load(queryResult);
+                            DataRow dw = di.Rows[0];
+                            kwota = System.Double.Parse(dw[0].ToString());
+
+                            Random zmienna1 = new Random();
+                            double w = zmienna1.Next(100000000, 999999999);
+
+                            if (kwota < System.Double.Parse(textBoxWyplata.Text))
+                            {
+                                MessageBox.Show("Kwota do wypłaty jest większa niż dostępne środki na koncie. Zmień kwotę wypłaty", "Błąd kwota", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            }
+                            else
+                            {
+                                SqlDataAdapter sdg = new SqlDataAdapter("SELECT Count(*) From Konto" + StalyLogowanie.pesel + " Where NumerTransakcji = " + w + "", con);
+                                DataTable dg = new DataTable();
+                                sdg.Fill(dg);
+                                if (dg.Rows[0][0].ToString() == "1")
+                                {
+                                    MessageBox.Show("Wylosowany numer transakcji istnieje w bazie danych. Spróbuj ponownie.", "Błąd numer transakcji", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                }
+                                else
+                                {
+                                    SqlCommand command = new SqlCommand("UPDATE InfoKonto SET StanKonta -=" + System.Decimal.Parse(textBoxWyplata.Text) + " WHERE PESEL = '" + StalyLogowanie.pesel + "'", con);
+                                    command.ExecuteNonQuery();
+                                    SqlCommand command1 = new SqlCommand("INSERT INTO Konto" + StalyLogowanie.pesel + " VALUES(" + w + ",'" + DateTime.Today.ToString("yyyy-MM-dd") + "','Wypłata'," + System.Decimal.Parse(textBoxWyplata.Text) + ")", con);
+                                    command1.ExecuteNonQuery();
+
+                                    MessageBox.Show("Wypłata została dokonana.", "Wypłata", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            MessageBox.Show("Podany rodzaj konta do danego numeru PESEL nie istnieje. Wybierz prawidłowy rodzaj konta jakie posiadasz.", "Błąd rodzaj konta", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        }
+                        con.Close();
+                    }
+                }
+            }
+        }
+    }
+}
