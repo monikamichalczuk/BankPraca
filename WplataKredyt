@@ -1,0 +1,160 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Drawing;
+using System.Data;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Data.SqlClient;
+
+namespace BankPraca
+{
+    public partial class WplataKredyt : UserControl
+    {
+        public WplataKredyt()
+        {
+            InitializeComponent();
+        }
+
+        private void textBoxWplata_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.D0 || e.KeyCode == Keys.D1 || e.KeyCode == Keys.D2 || e.KeyCode == Keys.D3 || e.KeyCode == Keys.D4 || e.KeyCode == Keys.D5 || e.KeyCode == Keys.D6 || e.KeyCode == Keys.D7 || e.KeyCode == Keys.D8 || e.KeyCode == Keys.D9 || e.KeyCode == Keys.NumPad0 || e.KeyCode == Keys.NumPad1 || e.KeyCode == Keys.NumPad2 || e.KeyCode == Keys.NumPad3 || e.KeyCode == Keys.NumPad4 || e.KeyCode == Keys.NumPad5 || e.KeyCode == Keys.NumPad6 || e.KeyCode == Keys.NumPad7 || e.KeyCode == Keys.NumPad8 || e.KeyCode == Keys.NumPad9 || e.KeyCode == Keys.Back)
+            {
+                e.Handled = true;
+            }
+            else
+            {
+                textBoxWplata.Clear();
+                MessageBox.Show("Źle wprowadzone. Podaj liczbę.", "Błąd kwota wplaty", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        private void comboBoxRodzajKredytu_KeyUp(object sender, KeyEventArgs e)
+        {
+            comboBoxRodzajKredytu.SelectedItem = "Wybierz";
+            MessageBox.Show("Źle wprowadzone. Wybierz z listy", "Błąd rodzaj kredytu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+
+        private void comboBoxIloscRat_KeyUp(object sender, KeyEventArgs e)
+        {
+            comboBoxIloscRat.SelectedItem = "Wybierz";
+            MessageBox.Show("Źle wprowadzone. Wybierz z listy", "Błąd ilość rat", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+
+        private void buttonWplac_Click(object sender, EventArgs e)
+        {
+            if (textBoxWplata.Text.Length == 0)
+            {
+                MessageBox.Show("Brak kwoty wpłaty. Podaj kwotę.", "Brak kwoty wpłaty", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+            else
+            {
+                if (System.Decimal.Parse(textBoxWplata.Text) > 3000 || System.Decimal.Parse(textBoxWplata.Text) < 1)
+                {
+                    MessageBox.Show("Kwota wpłaty jest za mała bądź za duża. Musi być conajmniej 1 zł, ale jednocześnie mniejsza niż 3 000zł.", "Błąd kwota wpłaty", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+                else
+                {
+                    if (comboBoxRodzajKredytu.Text == "Wybierz")
+                    {
+                        MessageBox.Show("Rodzaj kredytu nie został wybrany. Wybierz z listy.", "Błąd rodzaj kredytu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
+                    else
+                    {
+                        if (comboBoxIloscRat.Text == "Wybierz")
+                        {
+                            MessageBox.Show("Ilość rat nie została wybrana. Wybierz z listy.", "Błąd ilość rat", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        }
+                        else
+                        {
+                            SqlConnection con = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\Monika\Desktop\BankPraca\BazaBank.mdf;Integrated Security=True;Connect Timeout=30");
+                            con.Open();
+                            SqlDataAdapter sda = new SqlDataAdapter("SELECT Count(*) From Logowanie Where PESEL = '" + StalyLogowanie.pesel + "' AND Kredyt = 'TAK'", con);
+                            DataTable da = new DataTable();
+                            sda.Fill(da);
+                            if (da.Rows[0][0].ToString() == "1")
+                            {
+                                SqlDataAdapter sdb = new SqlDataAdapter("SELECT Count(*) From InfoKredyty Where PESEL = '" + StalyLogowanie.pesel + "' AND RodzajKredytu = '" + comboBoxRodzajKredytu.Text + "' AND IlośćRat = '" + comboBoxIloscRat.Text + "'", con);
+                                DataTable db = new DataTable();
+                                sdb.Fill(db);
+                                if (db.Rows[0][0].ToString() == "1")
+                                {
+                                    if (comboBoxRodzajKredytu.Text == "Kredyt dla młodych (2,0%)")
+                                    {
+                                        Random zmienna1 = new Random();
+                                        double w = zmienna1.Next(100000000, 999999999);
+
+                                        SqlDataAdapter sdg = new SqlDataAdapter("SELECT Count(*) From KredytDlaMlodych" + StalyLogowanie.pesel + " Where NumerTransakcji = " + w + "", con);
+                                        DataTable dg = new DataTable();
+                                        sdg.Fill(dg);
+                                        if (dg.Rows[0][0].ToString() == "1")
+                                        {
+                                            MessageBox.Show("Wylosowany numer transakcji istnieje w bazie danych. Spróbuj ponownie.", "Błąd numer transakcji", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                        }
+                                        else
+                                        {
+                                            SqlCommand command1 = new SqlCommand("INSERT INTO KredytDlaMlodych" + StalyLogowanie.pesel + " VALUES(" + w + ",'" + DateTime.Today.ToString("yyyy-MM-dd") + "','WPŁATA'," + System.Decimal.Parse(textBoxWplata.Text) + ")", con);
+                                            command1.ExecuteNonQuery();
+
+                                            MessageBox.Show("Wpłata została dokonana.", "Wpłata", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                        }
+                                    }
+                                    else if (comboBoxRodzajKredytu.Text == "Kredyt mieszkaniowy (4,5%)")
+                                    {
+                                        Random zmienna1 = new Random();
+                                        double w = zmienna1.Next(100000000, 999999999);
+
+                                        SqlDataAdapter sdg = new SqlDataAdapter("SELECT Count(*) From KredytMieszkaniowy" + StalyLogowanie.pesel + " Where NumerTransakcji = " + w + "", con);
+                                        DataTable dg = new DataTable();
+                                        sdg.Fill(dg);
+                                        if (dg.Rows[0][0].ToString() == "1")
+                                        {
+                                            MessageBox.Show("Wylosowany numer transakcji istnieje w bazie danych. Spróbuj ponownie.", "Błąd numer transakcji", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                        }
+                                        else
+                                        {
+                                            SqlCommand command1 = new SqlCommand("INSERT INTO KredytMieszkaniowy" + StalyLogowanie.pesel + " VALUES(" + w + ",'" + DateTime.Today.ToString("yyyy-MM-dd") + "','WPŁATA'," + System.Decimal.Parse(textBoxWplata.Text) + ")", con);
+                                            command1.ExecuteNonQuery();
+
+                                            MessageBox.Show("Wpłata została dokonana.", "Wpłata", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                        }
+                                    }
+                                    else if (comboBoxRodzajKredytu.Text == "Kredyt samochodowy (3,5%)")
+                                    {
+                                        Random zmienna1 = new Random();
+                                        double w = zmienna1.Next(100000000, 999999999);
+
+                                        SqlDataAdapter sdg = new SqlDataAdapter("SELECT Count(*) From KredytSamochodowy" + StalyLogowanie.pesel + " Where NumerTransakcji = " + w + "", con);
+                                        DataTable dg = new DataTable();
+                                        sdg.Fill(dg);
+                                        if (dg.Rows[0][0].ToString() == "1")
+                                        {
+                                            MessageBox.Show("Wylosowany numer transakcji istnieje w bazie danych. Spróbuj ponownie.", "Błąd numer transakcji", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                        }
+                                        else
+                                        {
+                                            SqlCommand command1 = new SqlCommand("INSERT INTO KredytSamochodowy" + StalyLogowanie.pesel + " VALUES(" + w + ",'" + DateTime.Today.ToString("yyyy-MM-dd") + "','WPŁATA'," + System.Decimal.Parse(textBoxWplata.Text) + ")", con);
+                                            command1.ExecuteNonQuery();
+
+                                            MessageBox.Show("Wpłata została dokonana.", "Wpłata", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    MessageBox.Show("Nie posiadasz wybranego kredytu. Wybierz prawidłowy kredyt i ilość rat, które masz.", "Błąd kredyt", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                }
+                            }
+                            else
+                            {
+                                MessageBox.Show("Nie posiadasz żadnego kredytu.", "Brak kredytu", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
