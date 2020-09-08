@@ -1,0 +1,397 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Drawing;
+using System.Data;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Data.SqlClient;
+
+namespace BankPraca
+{
+    public partial class WniosekKredyt : UserControl
+    {
+        public WniosekKredyt()
+        {
+            InitializeComponent();
+        }
+
+        private void buttonZamknij_Click(object sender, EventArgs e)
+        {
+            this.Hide();
+            this.Visible = false;
+            this.SendToBack();
+        }
+
+        private void textBoxPesel_KeyUp(object sender, KeyEventArgs e)
+        {
+            textBoxPesel.Text = StalyLogowanie.pesel;
+        }
+
+        private void textBoxWysokoscKredytu_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Tab || e.KeyCode == Keys.D0 || e.KeyCode == Keys.D1 || e.KeyCode == Keys.D2 || e.KeyCode == Keys.D3 || e.KeyCode == Keys.D4 || e.KeyCode == Keys.D5 || e.KeyCode == Keys.D6 || e.KeyCode == Keys.D7 || e.KeyCode == Keys.D8 || e.KeyCode == Keys.D9 || e.KeyCode == Keys.NumPad0 || e.KeyCode == Keys.NumPad1 || e.KeyCode == Keys.NumPad2 || e.KeyCode == Keys.NumPad3 || e.KeyCode == Keys.NumPad4 || e.KeyCode == Keys.NumPad5 || e.KeyCode == Keys.NumPad6 || e.KeyCode == Keys.NumPad7 || e.KeyCode == Keys.NumPad8 || e.KeyCode == Keys.NumPad9 || e.KeyCode == Keys.Back)
+            {
+                e.Handled = true;
+            }
+            else
+            {
+                textBoxWysokoscKredytu.Clear();
+                MessageBox.Show("Źle wprowadzone. Podaj liczbę.", "Błąd wysokość kredytu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        private void comboBoxRodzajKredytu_KeyUp(object sender, KeyEventArgs e)
+        {
+            comboBoxRodzajKredytu.SelectedItem = "Wybierz";
+            MessageBox.Show("Źle wprowadzone. Wybierz z listy", "Błąd rodzaj kredytu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+
+        private void comboBoxIloscRat_KeyUp(object sender, KeyEventArgs e)
+        {
+            comboBoxIloscRat.SelectedItem = "Wybierz";
+            MessageBox.Show("Źle wprowadzone. Wybierz z listy", "Błąd ilość rat", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+
+        private void comboBoxRodzajRat_KeyUp(object sender, KeyEventArgs e)
+        {
+            comboBoxRodzajRat.SelectedItem = "Wybierz";
+            MessageBox.Show("Źle wprowadzone. Wybierz z listy", "Błąd rodzaj rat", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+
+        private void buttonWnioskuj_Click(object sender, EventArgs e)
+        {
+            long r = long.Parse(dateTimePickerDataUrodzenia.Value.ToString("yyyy"));
+            long n = long.Parse(DateTime.Today.ToString("yyyy"));
+
+            long g = n - r;
+
+            if (textBoxImie.Text.Length < 3 || textBoxImie.Text.Length > 20) 
+            {
+                MessageBox.Show("Źle zostało podane imię. Jest zbyt krótkie albo za długie","Błąd imię", MessageBoxButtons.OK,MessageBoxIcon.Warning);
+            }
+            else 
+            {
+                if(textBoxNazwisko.Text.Length < 3 || textBoxNazwisko.Text.Length > 50) 
+                {
+                    MessageBox.Show("Źle zostało podane nazwisko. Jest zbyt krótkie albo za długie. Nazwisko powinno składać się od 3 do 50-ciu znaków.","Błąd naziwsko", MessageBoxButtons.OK,MessageBoxIcon.Warning);
+                }
+                else 
+                {
+                    if(textBoxPesel.Text.Length == 11)
+                    {
+                        if(textBoxNumerDowodu.Text.Length == 9) 
+                        {
+                            if (textBoxWysokoscKredytu.Text.Length == 0)
+                            {
+                                MessageBox.Show("Kwota kredytu nie została podana. Podaj kwotę kredytu.", "Błąd kwota kredytu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            }
+                            else
+                            {
+                                if (System.Double.Parse(textBoxWysokoscKredytu.Text) < 50000 || System.Double.Parse(textBoxWysokoscKredytu.Text) > 1000000)
+                                {
+                                    MessageBox.Show("Kwota kredytu jest za mała bądź za duża. Kwota powinna być conajmniej 50 000zł, a jednocześnie mniejsza niż 1 000 000zł.", "Błąd wysokość kredytu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                }
+                                else
+                                {
+                                    if (comboBoxRodzajKredytu.Text == "Kredyt dla młodych (2,0%)" || comboBoxRodzajKredytu.Text == "Kredyt mieszkaniowy (4,5%)" || comboBoxRodzajKredytu.Text == "Kredyt samochodowy (3,5%)")
+                                    {
+                                        if (comboBoxIloscRat.Text == "60 rat" || comboBoxIloscRat.Text == "120 rat" || comboBoxIloscRat.Text == "240 rat")
+                                        {
+                                            if (comboBoxRodzajRat.Text == "Równe" || comboBoxRodzajRat.Text == "Malejące")
+                                            {
+                                                if (g > 30 && comboBoxRodzajKredytu.Text == "Kredyt dla młodych (2,0%)")
+                                                {
+                                                    MessageBox.Show("Wybrany kredyt jest dla osób w wieku od 18 do 30 lat.", "Błąd kredyt", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                                }
+                                                else
+                                                {
+                                                    SqlConnection con = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\Monika\Desktop\BankPraca\BazaBank.mdf;Integrated Security=True;Connect Timeout=30");
+                                                    con.Open();
+
+                                                    SqlDataAdapter sdc = new SqlDataAdapter("SELECT Count(*) From Logowanie Where PESEL = '" + StalyLogowanie.pesel + "' AND Kredyt = 'TAK'", con);
+                                                    DataTable dc = new DataTable();
+                                                    sdc.Fill(dc);
+                                                    if (dc.Rows[0][0].ToString() == "1")
+                                                    {
+                                                        SqlDataAdapter sdh = new SqlDataAdapter("SELECT Count(*) From InfoKredyty Where PESEL = '" + StalyLogowanie.pesel + "' AND RodzajKredytu = '" + comboBoxRodzajKredytu.Text + "'", con);
+                                                        DataTable dh = new DataTable();
+                                                        sdh.Fill(dh);
+                                                        if (dh.Rows[0][0].ToString() == "1")
+                                                        {
+                                                            MessageBox.Show("Do podanego numeru PESEL istnieje podany kredyt. Można mieć maksymalnie trzy różne kredyty.", "Błąd kredyt", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                                        }
+                                                        else
+                                                        {
+                                                            Random zmienna = new Random();
+                                                            double a = zmienna.Next(100000000, 999999999);
+
+                                                            SqlDataAdapter sdd = new SqlDataAdapter("SELECT Count(*) From InfoKredyty Where NumerKredytu = " + a + "", con);
+                                                            DataTable dd = new DataTable();
+                                                            sdd.Fill(dd);
+                                                            if (dd.Rows[0][0].ToString() == "1")
+                                                            {
+                                                                MessageBox.Show("Wylosowany numer kredytu istnieje w bazie danych. Spróbuj ponownie.", "Błąd numer kredytu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                                            }
+                                                            else
+                                                            {
+                                                                if (comboBoxRodzajKredytu.Text == "Kredyt dla młodych (2,0%)")
+                                                                {
+                                                                    Random zmienna1 = new Random();
+                                                                    double w = zmienna1.Next(100000000, 999999999);
+
+                                                                    SqlCommand command1 = new SqlCommand("CREATE TABLE KredytDlaMlodych" + StalyLogowanie.pesel + "(NumerTransakcji BIGINT NOT NULL, DataTransakcji DATE NOT NULL, RodzajTransakcji VARCHAR(50) NOT NULL, Kwota DECIMAL(18,2) NOT NULL, CONSTRAINT PK_NumerTransakcjiKDM" + StalyLogowanie.pesel + " PRIMARY KEY CLUSTERED(NumerTransakcji));", con);
+                                                                    command1.ExecuteNonQuery();
+                                                                    SqlCommand command3 = new SqlCommand("INSERT INTO KredytDlaMlodych" + StalyLogowanie.pesel + " VALUES(" + w + ",'" + DateTime.Today.ToString("yyyy-MM-dd") + "','WYPŁATA'," + System.Decimal.Parse(textBoxWysokoscKredytu.Text) + ")", con);
+                                                                    command3.ExecuteNonQuery();
+
+                                                                    SqlCommand command2 = new SqlCommand("INSERT INTO InfoKredyty VALUES(" + a + ",'" + StalyLogowanie.pesel + "'," + System.Decimal.Parse(textBoxWysokoscKredytu.Text) + ",'" + comboBoxRodzajKredytu.Text + "','" + comboBoxIloscRat.Text + "','" + comboBoxRodzajRat.Text + "')", con);
+                                                                    command2.ExecuteNonQuery();
+                                                                    MessageBox.Show("Dane zostały zaktualizowane. Wybrany przez Ciebie kredyt został Tobie udzielony.", "Udzielenie Kredytu", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                                                }
+                                                                else if (comboBoxRodzajKredytu.Text == "Kredyt mieszkaniowy (4,5%)")
+                                                                {
+                                                                    Random zmienna1 = new Random();
+                                                                    double w = zmienna1.Next(100000000, 999999999);
+
+                                                                    SqlCommand command1 = new SqlCommand("CREATE TABLE KredytMieszkaniowy" + StalyLogowanie.pesel + "(NumerTransakcji BIGINT NOT NULL, DataTransakcji DATE NOT NULL, RodzajTransakcji VARCHAR(50) NOT NULL, Kwota DECIMAL(18,2) NOT NULL, CONSTRAINT PK_NumerTransakcjiKM" + StalyLogowanie.pesel + " PRIMARY KEY CLUSTERED(NumerTransakcji));", con);
+                                                                    command1.ExecuteNonQuery();
+                                                                    SqlCommand command3 = new SqlCommand("INSERT INTO KredytMieszkaniowy" + StalyLogowanie.pesel + " VALUES(" + w + ",'" + DateTime.Today.ToString("yyyy-MM-dd") + "','WYPŁATA'," + System.Decimal.Parse(textBoxWysokoscKredytu.Text) + ")", con);
+                                                                    command3.ExecuteNonQuery();
+
+                                                                    SqlCommand command2 = new SqlCommand("INSERT INTO InfoKredyty VALUES(" + a + ",'" + StalyLogowanie.pesel + "'," + System.Decimal.Parse(textBoxWysokoscKredytu.Text) + ",'" + comboBoxRodzajKredytu.Text + "','" + comboBoxIloscRat.Text + "','" + comboBoxRodzajRat.Text + "')", con);
+                                                                    command2.ExecuteNonQuery();
+                                                                    MessageBox.Show("Dane zostały zaktualizowane. Wybrany przez Ciebie kredyt został Tobie udzielony.", "Udzielenie Kredytu", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                                                }
+                                                                else if (comboBoxRodzajKredytu.Text == "Kredyt samochodowy (3,5%)")
+                                                                {
+                                                                    Random zmienna1 = new Random();
+                                                                    double w = zmienna1.Next(100000000, 999999999);
+
+                                                                    SqlCommand command1 = new SqlCommand("CREATE TABLE KredytSamochodowy" + StalyLogowanie.pesel + "(NumerTransakcji BIGINT NOT NULL, DataTransakcji DATE NOT NULL, RodzajTransakcji VARCHAR(50) NOT NULL, Kwota DECIMAL(18,2) NOT NULL, CONSTRAINT PK_NumerTransakcjiKS" + StalyLogowanie.pesel + " PRIMARY KEY CLUSTERED(NumerTransakcji));", con);
+                                                                    command1.ExecuteNonQuery();
+                                                                    SqlCommand command3 = new SqlCommand("INSERT INTO KredytSamochodowy" + StalyLogowanie.pesel + " VALUES(" + w + ",'" + DateTime.Today.ToString("yyyy-MM-dd") + "','WYPŁATA'," + System.Decimal.Parse(textBoxWysokoscKredytu.Text) + ")", con);
+                                                                    command3.ExecuteNonQuery();
+
+                                                                    SqlCommand command2 = new SqlCommand("INSERT INTO InfoKredyty VALUES(" + a + ",'" + StalyLogowanie.pesel + "'," + System.Decimal.Parse(textBoxWysokoscKredytu.Text) + ",'" + comboBoxRodzajKredytu.Text + "','" + comboBoxIloscRat.Text + "','" + comboBoxRodzajRat.Text + "')", con);
+                                                                    command2.ExecuteNonQuery();
+                                                                    MessageBox.Show("Dane zostały zaktualizowane. Wybrany przez Ciebie kredyt został Tobie udzielony.", "Udzielenie Kredytu", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                                                }
+                                                            }
+                                                        }
+
+                                                    }
+                                                    else
+                                                    {
+                                                        Random zmienna = new Random();
+                                                        double a = zmienna.Next(100000000, 999999999);
+
+                                                        SqlDataAdapter sdd = new SqlDataAdapter("SELECT Count(*) From InfoKredyty Where NumerKredytu = " + a + "", con);
+                                                        DataTable dd = new DataTable();
+                                                        sdd.Fill(dd);
+                                                        if (dd.Rows[0][0].ToString() == "1")
+                                                        {
+                                                            MessageBox.Show("Wylosowany numer kredytu istnieje w bazie danych. Spróbuj ponownie.", "Błąd numer kredytu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                                        }
+                                                        else
+                                                        {
+                                                            SqlCommand command = new SqlCommand("UPDATE Logowanie SET Kredyt = 'TAK' WHERE PESEL = '" + StalyLogowanie.pesel + "'", con);
+                                                            command.ExecuteNonQuery();
+
+                                                            if (comboBoxRodzajKredytu.Text == "Kredyt dla młodych (2,0%)")
+                                                            {
+                                                                Random zmienna1 = new Random();
+                                                                double w = zmienna1.Next(100000000, 999999999);
+
+                                                                SqlCommand command1 = new SqlCommand("CREATE TABLE KredytDlaMlodych" + StalyLogowanie.pesel + "(NumerTransakcji BIGINT NOT NULL, DataTransakcji DATE NOT NULL, RodzajTransakcji VARCHAR(50) NOT NULL, Kwota DECIMAL(18,2) NOT NULL, CONSTRAINT PK_NumerTransakcjiKDM" + StalyLogowanie.pesel + " PRIMARY KEY CLUSTERED(NumerTransakcji));", con);
+                                                                command1.ExecuteNonQuery();
+                                                                SqlCommand command3 = new SqlCommand("INSERT INTO KredytDlaMlodych" + StalyLogowanie.pesel + " VALUES(" + w + ",'" + DateTime.Today.ToString("yyyy-MM-dd") + "','WYPŁATA'," + System.Decimal.Parse(textBoxWysokoscKredytu.Text) + ")", con);
+                                                                command3.ExecuteNonQuery();
+
+                                                                SqlCommand command2 = new SqlCommand("INSERT INTO InfoKredyty VALUES(" + a + ",'" + StalyLogowanie.pesel + "'," + System.Decimal.Parse(textBoxWysokoscKredytu.Text) + ",'" + comboBoxRodzajKredytu.Text + "','" + comboBoxIloscRat.Text + "','" + comboBoxRodzajRat.Text + "')", con);
+                                                                command2.ExecuteNonQuery();
+                                                                MessageBox.Show("Dane zostały zaktualizowane. Wybrany przez Ciebie kredyt został Tobie udzielony.", "Udzielenie Kredytu", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                                            }
+                                                            else if (comboBoxRodzajKredytu.Text == "Kredyt mieszkaniowy (4,5%)")
+                                                            {
+                                                                Random zmienna1 = new Random();
+                                                                double w = zmienna1.Next(100000000, 999999999);
+
+                                                                SqlCommand command1 = new SqlCommand("CREATE TABLE KredytMieszkaniowy" + StalyLogowanie.pesel + "(NumerTransakcji BIGINT NOT NULL, DataTransakcji DATE NOT NULL, RodzajTransakcji VARCHAR(50) NOT NULL, Kwota DECIMAL(18,2) NOT NULL, CONSTRAINT PK_NumerTransakcjiKM" + StalyLogowanie.pesel + " PRIMARY KEY CLUSTERED(NumerTransakcji));", con);
+                                                                command1.ExecuteNonQuery();
+                                                                SqlCommand command3 = new SqlCommand("INSERT INTO KredytMieszkaniowy" + StalyLogowanie.pesel + " VALUES(" + w + ",'" + DateTime.Today.ToString("yyyy-MM-dd") + "','WYPŁATA'," + System.Decimal.Parse(textBoxWysokoscKredytu.Text) + ")", con);
+                                                                command3.ExecuteNonQuery();
+
+                                                                SqlCommand command2 = new SqlCommand("INSERT INTO InfoKredyty VALUES(" + a + ",'" + StalyLogowanie.pesel + "'," + System.Decimal.Parse(textBoxWysokoscKredytu.Text) + ",'" + comboBoxRodzajKredytu.Text + "','" + comboBoxIloscRat.Text + "','" + comboBoxRodzajRat.Text + "')", con);
+                                                                command2.ExecuteNonQuery();
+                                                                MessageBox.Show("Dane zostały zaktualizowane. Wybrany przez Ciebie kredyt został Tobie udzielony.", "Udzielenie Kredytu", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                                            }
+                                                            else if (comboBoxRodzajKredytu.Text == "Kredyt samochodowy (3,5%)")
+                                                            {
+                                                                Random zmienna1 = new Random();
+                                                                double w = zmienna1.Next(100000000, 999999999);
+
+                                                                SqlCommand command1 = new SqlCommand("CREATE TABLE KredytSamochodowy" + StalyLogowanie.pesel + "(NumerTransakcji BIGINT NOT NULL, DataTransakcji DATE NOT NULL, RodzajTransakcji VARCHAR(50) NOT NULL, Kwota DECIMAL(18,2) NOT NULL, CONSTRAINT PK_NumerTransakcjiKS" + StalyLogowanie.pesel + " PRIMARY KEY CLUSTERED(NumerTransakcji));", con);
+                                                                command1.ExecuteNonQuery();
+                                                                SqlCommand command3 = new SqlCommand("INSERT INTO KredytSamochodowy" + StalyLogowanie.pesel + " VALUES(" + w + ",'" + DateTime.Today.ToString("yyyy-MM-dd") + "','WYPŁATA'," + System.Decimal.Parse(textBoxWysokoscKredytu.Text) + ")", con);
+                                                                command3.ExecuteNonQuery();
+
+                                                                SqlCommand command2 = new SqlCommand("INSERT INTO InfoKredyty VALUES(" + a + ",'" + StalyLogowanie.pesel + "'," + System.Decimal.Parse(textBoxWysokoscKredytu.Text) + ",'" + comboBoxRodzajKredytu.Text + "','" + comboBoxIloscRat.Text + "','" + comboBoxRodzajRat.Text + "')", con);
+                                                                command2.ExecuteNonQuery();
+                                                                MessageBox.Show("Dane zostały zaktualizowane. Wybrany przez Ciebie kredyt został Tobie udzielony.", "Udzielenie Kredytu", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                                                            }
+                                                        }
+                                                    }
+
+                                                    con.Close();
+                                                }
+                                            }
+                                            else
+                                            {
+                                                MessageBox.Show("Rodzaj rat nie został wybrany. Wybierz rodzaj rat z podanych opcji.", "Błąd rodzaj rat", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                            }
+                                        }
+                                        else
+                                        {
+                                            MessageBox.Show("Ilość rat nie została wybrana. Wybierz ilość rat z podanych opcji.", "Błąd ilość rat", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        MessageBox.Show("Rodzaj kredytu nie został wybrany. Wybierz rodzaj kredytu z podanych opcji", "Błąd rodzaj kredytu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                    }
+                                }
+                            }
+                        }
+                        else 
+                        {
+                            MessageBox.Show("Źle został podany numer dowodu osobistego. Numer dowodu powinien składać się z 9-ciu znaków.","Błąd numer dowodu",MessageBoxButtons.OK,MessageBoxIcon.Warning);
+                        }
+                    }
+                    else 
+                    {
+                        MessageBox.Show("Źle został podany numer PESEL. Numer PESEL musi mieć 11 cyfr.","Błąd numer PESEL", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
+                }
+               
+            }
+        }
+
+        private void textBoxImie_KeyUp(object sender, KeyEventArgs e)
+        {
+            SqlConnection con = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\Monika\Desktop\BankPraca\BazaBank.mdf;Integrated Security=True;Connect Timeout=30");
+            con.Open();
+
+            string imie;
+            SqlCommand query = new SqlCommand("SELECT Imię FROM InfoKlienci WHERE PESEL = '" + StalyLogowanie.pesel + "'", con);
+            SqlDataReader queryResult = query.ExecuteReader();
+            DataTable di = new DataTable();
+            di.Load(queryResult);
+            DataRow dw = di.Rows[0];
+            imie = dw[0].ToString();
+            textBoxImie.Text = imie;
+
+            con.Close();
+        }
+
+        private void textBoxNazwisko_KeyUp(object sender, KeyEventArgs e)
+        {
+            SqlConnection con = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\Monika\Desktop\BankPraca\BazaBank.mdf;Integrated Security=True;Connect Timeout=30");
+            con.Open();
+
+            string nazwisko;
+            SqlCommand query = new SqlCommand("SELECT Nazwisko FROM InfoKlienci WHERE PESEL = '" + StalyLogowanie.pesel + "'", con);
+            SqlDataReader queryResult = query.ExecuteReader();
+            DataTable di = new DataTable();
+            di.Load(queryResult);
+            DataRow dw = di.Rows[0];
+            nazwisko = dw[0].ToString();
+            textBoxNazwisko.Text = nazwisko;
+
+            con.Close();
+        }
+
+        private void textBoxNumerDowodu_KeyUp(object sender, KeyEventArgs e)
+        {
+            SqlConnection con = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\Monika\Desktop\BankPraca\BazaBank.mdf;Integrated Security=True;Connect Timeout=30");
+            con.Open();
+
+            string dowod;
+            SqlCommand query = new SqlCommand("SELECT NumerDowodu FROM InfoKlienci WHERE PESEL = '" + StalyLogowanie.pesel + "'", con);
+            SqlDataReader queryResult = query.ExecuteReader();
+            DataTable di = new DataTable();
+            di.Load(queryResult);
+            DataRow dw = di.Rows[0];
+            dowod = dw[0].ToString();
+            textBoxNumerDowodu.Text = dowod;
+
+            con.Close();
+        }
+
+        private void dateTimePickerDataUrodzenia_ValueChanged(object sender, EventArgs e)
+        {
+            SqlConnection con = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\Monika\Desktop\BankPraca\BazaBank.mdf;Integrated Security=True;Connect Timeout=30");
+            con.Open();
+
+            string dataur;
+            SqlCommand query3 = new SqlCommand("SELECT DataUrodzenia FROM InfoKlienci WHERE PESEL = '" + StalyLogowanie.pesel + "'", con);
+            SqlDataReader queryResult3 = query3.ExecuteReader();
+            DataTable de = new DataTable();
+            de.Load(queryResult3);
+            DataRow df = de.Rows[0];
+            dataur = df[0].ToString();
+            dateTimePickerDataUrodzenia.Value = DateTime.Parse(dataur);
+
+            con.Close();
+        }
+
+        private void WniosekKredyt_Load(object sender, EventArgs e)
+        {
+            textBoxPesel.Text = StalyLogowanie.pesel;    
+
+            SqlConnection con = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\Monika\Desktop\BankPraca\BazaBank.mdf;Integrated Security=True;Connect Timeout=30");
+            con.Open();
+
+            string dowod;
+            SqlCommand query = new SqlCommand("SELECT NumerDowodu FROM InfoKlienci WHERE PESEL = '" + StalyLogowanie.pesel + "'", con);
+            SqlDataReader queryResult = query.ExecuteReader();
+            DataTable di = new DataTable();
+            di.Load(queryResult);
+            DataRow dw = di.Rows[0];
+            dowod = dw[0].ToString();
+            textBoxNumerDowodu.Text = dowod;
+
+            string imie;
+            SqlCommand query1 = new SqlCommand("SELECT Imię FROM InfoKlienci WHERE PESEL = '" + StalyLogowanie.pesel + "'", con);
+            SqlDataReader queryResult1 = query1.ExecuteReader();
+            DataTable da = new DataTable();
+            da.Load(queryResult1);
+            DataRow db = da.Rows[0];
+            imie = db[0].ToString();
+            textBoxImie.Text = imie;
+
+            string nazwisko;
+            SqlCommand query2 = new SqlCommand("SELECT Nazwisko FROM InfoKlienci WHERE PESEL = '" + StalyLogowanie.pesel + "'", con);
+            SqlDataReader queryResult2 = query2.ExecuteReader();
+            DataTable dc = new DataTable();
+            dc.Load(queryResult2);
+            DataRow dd = dc.Rows[0];
+            nazwisko = dd[0].ToString();
+            textBoxNazwisko.Text = nazwisko;
+
+            string dataur;
+            SqlCommand query3 = new SqlCommand("SELECT DataUrodzenia FROM InfoKlienci WHERE PESEL = '" + StalyLogowanie.pesel + "'", con);
+            SqlDataReader queryResult3 = query3.ExecuteReader();
+            DataTable de = new DataTable();
+            de.Load(queryResult3);
+            DataRow df = de.Rows[0];
+            dataur = df[0].ToString();
+            dateTimePickerDataUrodzenia.Value = DateTime.Parse(dataur);
+
+            con.Close();
+
+        }
+    }
+}
